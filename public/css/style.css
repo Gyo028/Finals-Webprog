@@ -1,0 +1,231 @@
+/* =========================================
+   1. General Reset & Base Styles
+   ========================================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #dfdfdf; /* slightly off-white */
+    color: #333;
+    line-height: 1.6;
+}
+
+/* =========================================
+   2. Header
+   ========================================= */
+.site-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 50px;
+    background-color: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #111;
+    text-decoration: none;
+}
+
+.book-btn {
+    background: #111;
+    color: #fff;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: 0.3s;
+}
+
+.book-btn:hover {
+    background: #444;
+}
+
+/* =========================================
+   3. Landing Section (Hero)
+   ========================================= */
+.landing {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;   /* vertical centering */
+    min-height: 80vh;      /* fills most of viewport */
+    padding: 0 50px;
+}
+
+.punchline {
+    width: 45%;            /* Slightly less than half */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding-right: 40px;
+}
+
+.punchline h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    text-align: left;
+    line-height: 1.2;
+}
+
+.punchline p {
+    font-size: 1.2rem;
+    color: #555;
+    text-align: left;
+}
+
+/* =========================================
+   4. Seamless Carousel (Fixed Loop)
+   ========================================= */
+.carousel {
+    width: 50%;
+    overflow: hidden;      /* Hides the images outside the frame */
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    height: 400px;         /* Fixed height */
+}
+
+.carousel-container {
+    display: flex;
+    width: 400%; /* 4 images total */
+    height: 100%;
+    /* Use 'linear' for the jump to be less noticeable, 
+       or 'ease-in-out' for smooth pauses */
+    animation: slide-loop 12s infinite; 
+}
+
+.carousel-container img {
+    width: 25%;            /* Each image takes up 1/4 of the 400% width */
+    height: 100%;
+    object-fit: cover;     /* Keeps aspect ratio while filling space */
+    flex-shrink: 0;
+}
+
+/* The Animation Logic:
+   0-20%: Stay on Image 1
+   25-45%: Stay on Image 2
+   50-70%: Stay on Image 3
+   75-95%: Stay on Image 1 (The Clone)
+   100%: Instant reset to 0%
+*/
+@keyframes slide-loop {
+    /* Image 1: Display for 25% of the time */
+    0%, 20% { transform: translateX(0); }
+
+    /* Transition to Image 2 */
+    25%, 45% { transform: translateX(-25%); }
+
+    /* Transition to Image 3 */
+    50%, 70% { transform: translateX(-50%); }
+
+    /* Transition to Image 1 (The Clone) */
+    75%, 99.99% { transform: translateX(-75%); }
+
+    /* INSTANT RESET: 
+       By moving from -75% to 0% in 0.01% of the time, 
+       the "rewind" happens faster than the human eye can see.
+    */
+    100% { transform: translateX(0); }
+}
+
+/* =========================================
+   5. Features Section
+   ========================================= */
+.features {
+    display: flex;
+    justify-content: space-around;
+    padding: 60px 50px;
+    background-color: #fafafa;
+    border-top: 1px solid #eee;
+    flex-wrap: wrap;
+}
+
+.feature {
+    flex: 1;
+    margin: 20px;
+    min-width: 250px;
+    text-align: center;
+    padding: 20px;
+    transition: 0.3s;
+}
+
+.feature h3 {
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+}
+
+.feature p {
+    color: #555;
+}
+
+.feature:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    background-color: #fff;
+    border-radius: 8px;
+}
+
+/* =========================================
+   6. Footer
+   ========================================= */
+.site-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 40px 50px;
+    background: linear-gradient(to right, #f9f9f9, #eaeaea);
+    border-top: 1px solid #eee;
+    flex-wrap: wrap;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.footer-section {
+    flex: 1;
+    margin: 10px 20px;
+    min-width: 200px;
+    text-align: left;
+}
+
+.footer-section h3 {
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+}
+
+.footer-section p {
+    color: #555;
+}
+
+.site-footer:hover {
+    background: linear-gradient(to right, #eaeaea, #dcdcdc);
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
+}
+
+/* =========================================
+   7. Mobile Responsiveness (Optional)
+   ========================================= */
+@media (max-width: 768px) {
+    .landing {
+        flex-direction: column;
+        padding: 40px 20px;
+        text-align: center;
+    }
+    .punchline, .carousel {
+        width: 100%;
+        padding-right: 0;
+        margin-bottom: 30px;
+    }
+    .punchline h1 {
+        text-align: center;
+    }
+    .punchline p {
+        text-align: center;
+    }
+}
