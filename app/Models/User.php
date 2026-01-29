@@ -13,20 +13,26 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
+     * The primary key associated with the table.
+     * Since your spreadsheet uses 'user_id' instead of 'id'.
+     */
+    protected $primaryKey = 'user_id';
+
+    /**
      * The attributes that are mass assignable.
-     *
-     * @var list<string>
+     * Updated to match your spreadsheet columns.
      */
     protected $fillable = [
-        'name',
+        'username',
         'email',
         'password',
+        'mobile_number',
+        'role_id',
+        'IsActive',
     ];
 
     /**
      * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
      */
     protected $hidden = [
         'password',
@@ -43,6 +49,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'IsActive' => 'boolean',
         ];
     }
 }
