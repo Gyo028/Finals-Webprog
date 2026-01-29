@@ -19,4 +19,4 @@
     </div>
 </main>
 
-@include('LandingPage.header')
+@include('LandingPage.footer')
