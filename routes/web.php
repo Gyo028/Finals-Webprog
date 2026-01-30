@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Booking\BookingController;
+
 
 Route::get('/', function () {
     return view('welcome');
@@ -34,3 +36,12 @@ Route::get('/dashboard', function () {
     return view('Client.UserDashboard');
 
 })->middleware(['auth'])->name('dashboard');
+
+
+Route::middleware(['auth'])->group(function () {
+    // Show the booking form
+    Route::get('/booking/new', [BookingController::class, 'create'])->name('bookings.new');
+    
+    // Process the booking form submission
+    Route::post('/booking/store', [BookingController::class, 'store'])->name('bookings.store');
+});
