@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// Important: Added these three imports
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,16 +19,17 @@ class User extends Authenticatable
 
     /**
      * The attributes that are mass assignable.
-     * Aligned with your migration: username, email, role_id, etc.
      */
     protected $fillable = [
-        'username',
+        'name',          // Required for Google
+        'username',      // Required for your table
         'email',
         'password',
-        'mobile_number',
+        'google_id',     // Required for Google
         'role_id',
         'IsActive',
-    ];
+        'mobile_number',
+];
 
     protected $hidden = [
         'password',
