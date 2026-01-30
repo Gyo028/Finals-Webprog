@@ -1,52 +1,71 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+namespace App\Models;
 
-return new class extends Migration
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
+class User extends Authenticatable
 {
-    public function up(): void
+    use HasFactory, Notifiable;
+
+    /**
+     * The primary key associated with the table.
+     */
+    protected $primaryKey = 'user_id';
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    protected $fillable = [
+        'username',
+        'email',
+        'password',
+        'mobile_number',
+        'role_id',
+        'IsActive',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * Get the attributes that should be cast.
+     */
+    protected function casts(): array
     {
-        Schema::create('users', function (Blueprint $table) {
-            $table->id('user_id'); 
-            $table->string('username')->unique();
-            $table->string('password');
-            $table->string('email')->unique();
-            $table->string('mobile_number')->nullable();
-            
-            // We must explicitly reference 'role_id' on the 'roles' table
-            $table->foreignId('role_id')->constrained(
-                table: 'roles', indexName: 'users_role_id_foreign'
-            )->references('role_id')->on('roles');
-
-            $table->boolean('IsActive')->default(true);
-            $table->timestamps(); 
-        });
-
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email')->primary();
-            $table->string('token');
-            $table->timestamp('created_at')->nullable();
-        });
-
-        Schema::create('sessions', function (Blueprint $table) {
-            $table->string('id')->primary();
-            // Pointing to your custom user_id primary key
-            $table->foreignId('user_id')->nullable()->index()->constrained(
-                table: 'users', column: 'user_id'
-            );
-            $table->string('ip_address', 45)->nullable();
-            $table->text('user_agent')->nullable();
-            $table->longText('payload');
-            $table->integer('last_activity')->index();
-        });
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'IsActive' => 'boolean',
+        ];
     }
 
-    public function down(): void
+    /** * Relationships **/
+
+    // Link to the Role table
+    public function role(): BelongsTo
     {
-        Schema::dropIfExists('sessions');
-        Schema::dropIfExists('password_reset_tokens');
-        Schema::dropIfExists('users');
+        return $this->belongsTo(Role::class, 'role_id', 'role_id');
     }
-};
+
+    // Link to the Client profile
+    public function client(): HasOne
+    {
+        return $this->hasOne(Client::class, 'user_id', 'user_id');
+    }
+
+    // Link to the Manager profile
+    public function manager(): HasOne
+    {
+        return $this->hasOne(Manager::class, 'user_id', 'user_id');
+    }
+}

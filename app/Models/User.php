@@ -9,19 +9,10 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The primary key associated with the table.
-     * Since your spreadsheet uses 'user_id' instead of 'id'.
-     */
     protected $primaryKey = 'user_id';
 
-    /**
-     * The attributes that are mass assignable.
-     * Updated to match your spreadsheet columns.
-     */
     protected $fillable = [
         'username',
         'email',
@@ -31,19 +22,11 @@ class User extends Authenticatable
         'IsActive',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -51,5 +34,19 @@ class User extends Authenticatable
             'password' => 'hashed',
             'IsActive' => 'boolean',
         ];
+    }
+
+    /** Relationships **/
+
+    public function role(): BelongsTo {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    public function client(): HasOne {
+        return $this->hasOne(Client::class, 'user_id');
+    }
+
+    public function manager(): HasOne {
+        return $this->hasOne(Manager::class, 'user_id');
     }
 }

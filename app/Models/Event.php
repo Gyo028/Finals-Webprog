@@ -6,22 +6,21 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Role extends Model
+class Event extends Model
 {
     use HasFactory;
 
     /**
      * The primary key associated with the table.
-     * Overriding default 'id' to match your migration.
      */
-    protected $primaryKey = 'role_id';
+    protected $primaryKey = 'event_id';
 
     /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'role_name',
-        'role_description',
+        'event_name',
+        'event_base_price',
         'IsActive',
     ];
 
@@ -29,15 +28,16 @@ class Role extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
+        'event_base_price' => 'decimal:2',
         'IsActive' => 'boolean',
     ];
 
     /**
-     * Get the users associated with this role.
-     * Relationship: A Role has many Users.
+     * Get the bookings for this event type.
+     * Relationship: One Event type can have many Bookings.
      */
-    public function users(): HasMany
+    public function bookings(): HasMany
     {
-        return $this->hasMany(User::class, 'role_id', 'role_id');
+        return $this->hasMany(Booking::class, 'event_id', 'event_id');
     }
 }
