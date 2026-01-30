@@ -9,5 +9,5 @@
 <body>
     <header class="site-header">
         <div class="logo">GR3AT A's</div>
-        <a href="#booking" class="book-btn">BOOK NOW</a>
+        <a href="{{ route('login') }}" class="book-btn">BOOK NOW</a>
     </header>
