@@ -57,12 +57,19 @@
 
         <div class="form-row">
             <div class="form-group">
-                <label>Date</label>
+                <label>Event Date</label>
                 <input type="date" name="event_date" required min="{{ date('Y-m-d') }}">
             </div>
+        </div>
+
+        <div class="form-row">
             <div class="form-group">
-                <label>Time</label>
-                <input type="time" name="event_time" required>
+                <label>Start Time</label>
+                <input type="time" name="event_time" id="event_time" required>
+            </div>
+            <div class="form-group">
+                <label>End Time</label>
+                <input type="time" name="booking_end_time" id="booking_end_time" required>
             </div>
         </div>
 
@@ -88,8 +95,7 @@
 <div id="confirmModal" class="modal-overlay">
     <div class="modal-card">
         <h3>Confirm Booking Details</h3>
-        <div id="modalSummary" class="modal-summary">
-            </div>
+        <div id="modalSummary" class="modal-summary"></div>
         <div class="modal-actions">
             <button type="button" class="cancel-btn" onclick="closeConfirmation()">Edit Details</button>
             <button type="button" class="confirm-btn" onclick="submitFinal()">Confirm & Pay</button>
@@ -122,12 +128,10 @@
         hiddenTotal.value = total;
     }
 
-    // Modal & Draft Functions
     const form = document.getElementById('bookingForm');
     const modal = document.getElementById('confirmModal');
 
     function openConfirmation() {
-        // Simple Validation Check
         if (!form.checkValidity()) {
             form.reportValidity();
             return;
@@ -137,6 +141,8 @@
         const pax = document.getElementById('pax_id').options[document.getElementById('pax_id').selectedIndex].text;
         const venue = document.getElementById('venue_name').value;
         const date = document.querySelector('input[name="event_date"]').value;
+        const startTime = document.getElementById('event_time').value;
+        const endTime = document.getElementById('booking_end_time').value;
         const total = document.getElementById('display_total').value;
 
         document.getElementById('modalSummary').innerHTML = `
@@ -144,6 +150,7 @@
             <p><strong>Guests:</strong> ${pax}</p>
             <p><strong>Venue:</strong> ${venue}</p>
             <p><strong>Date:</strong> ${date}</p>
+            <p><strong>Duration:</strong> ${startTime} - ${endTime}</p>
             <p class="total-highlight"><strong>Total: ${total}</strong></p>
         `;
         modal.style.display = 'flex';
@@ -159,17 +166,16 @@
     }
 
     function submitDraft() {
-        // Change action to draft route and submit
         form.action = "{{ route('bookings.draft') }}";
-        
-        // Remove 'required' from receipt if saving draft
         document.getElementById('receipt').required = false;
-        
+        // Make End Time not required for drafts if desired
+        document.getElementById('booking_end_time').required = false;
         form.submit();
     }
 </script>
 
 <style>
+    /* ... (Keeping your existing styles) ... */
     .booking-container { max-width: 550px; margin: 40px auto; padding: 30px; border-radius: 12px; background: #fff; box-shadow: 0 8px 20px rgba(0,0,0,0.1); font-family: sans-serif; }
     h2 { color: #333; text-align: center; margin-bottom: 25px; }
     .form-group { margin-bottom: 20px; }
@@ -191,7 +197,6 @@
     .draft-btn { flex: 1; padding: 15px; background: #6c757d; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
     .draft-btn:hover { background: #5a6268; }
 
-    /* Modal Styles */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
     .modal-card { background: white; padding: 25px; border-radius: 12px; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
     .modal-summary { margin: 20px 0; padding: 15px; background: #f9f9f9; border-radius: 8px; line-height: 1.6; }
