@@ -45,3 +45,6 @@ Route::middleware(['auth'])->group(function () {
     // Process the booking form submission
     Route::post('/booking/store', [BookingController::class, 'store'])->name('bookings.store');
 });
+
+Route::post('/bookings/store', [BookingController::class, 'store'])->name('bookings.store');
+Route::post('/bookings/draft', [BookingController::class, 'draft'])->name('bookings.draft');
