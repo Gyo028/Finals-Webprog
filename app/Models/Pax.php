@@ -12,7 +12,6 @@ class Pax extends Model
 
     /**
      * The table associated with the model.
-     * Laravel usually expects "paxes", but we specify it to be safe.
      */
     protected $table = 'paxes';
 
@@ -23,8 +22,10 @@ class Pax extends Model
 
     /**
      * The attributes that are mass assignable.
+     * Added 'pax_count' to the list.
      */
     protected $fillable = [
+        'pax_count', // New field added
         'pax_price',
     ];
 
@@ -32,12 +33,12 @@ class Pax extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
+        'pax_count' => 'integer',   // Cast to integer for clean math
         'pax_price' => 'decimal:2',
     ];
 
     /**
      * Get the bookings associated with this pax tier.
-     * Relationship: One Pax tier can be used by many Bookings.
      */
     public function bookings(): HasMany
     {

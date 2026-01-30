@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('paxes', function (Blueprint $table) {
             $table->id('pax_id');
+            $table->integer('pax_count');
             $table->decimal('pax_price', 10, 2);
             $table->timestamps();
         });
