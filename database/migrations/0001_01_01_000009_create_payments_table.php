@@ -10,12 +10,26 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id('payment_id');
-            // Links to the booking_id in your bookings table
-            $table->foreignId('booking_id')->constrained('bookings', 'booking_id');
+
+            // 1 Booking = 1 Payment
+            $table->unsignedBigInteger('booking_id')->unique();
+            $table->foreign('booking_id')
+                ->references('booking_id')
+                ->on('bookings')
+                ->onDelete('cascade');
+
             $table->decimal('amount', 10, 2);
-            $table->string('payment_status'); // e.g., 'Pending', 'Paid'
+
+            // Pending / Paid / Rejected (depends on your flow)
+            $table->string('payment_status')->default('Pending');
+
+            // Receipt image path stored in local storage
+            $table->string('receipt_path')->nullable();
+
             $table->timestamp('payment_date')->nullable();
-            $table->timestamps(); // Automatically handles created_at and updated_at
+
+
+            $table->timestamps();
         });
     }
 

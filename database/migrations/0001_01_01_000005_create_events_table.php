@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('event_name');
             $table->decimal('event_base_price', 10, 2);
             $table->boolean('IsActive')->default(true);
-            $table->timestamps(); // Correct way to handle created_at & modified_at
+            $table->timestamps();
         });
     }
 
