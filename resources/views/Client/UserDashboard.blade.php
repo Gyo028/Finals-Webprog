@@ -12,7 +12,7 @@
 <div class="dashboard">
 
     <!-- HERO / WELCOME -->
-    <div class="hero">
+    <div class="hero" id="hero">
         <div class="hero-text">
             <h1>Welcome, {{ Auth::user()->username }}</h1>
             <p>Turning your special moments into timeless memories.</p>
@@ -48,7 +48,6 @@
 
 
 <style>
-/* RESET */
 body {
     margin: 0;
     background-color: #f5f5f5;
@@ -100,18 +99,30 @@ body {
 
 /* HERO */
 .hero {
-    background: linear-gradient(
-        rgba(0,0,0,0.45),
-        rgba(0,0,0,0.45)
-    ),
-    url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e');
+    position: relative;
     background-size: cover;
     background-position: center;
     border-radius: 14px;
     padding: 60px;
     color: white;
     margin-bottom: 40px;
+    transition: background-image 1s ease-in-out;
 }
+
+/* Overlay for readability */
+.hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    border-radius: 14px;
+}
+
+.hero-text {
+    position: relative;
+    z-index: 1;
+}
+
 
 .hero h1 {
     font-size: 36px;
@@ -169,3 +180,29 @@ body {
     opacity: 0.8;
 }
 </style>
+
+<script>
+    const hero = document.getElementById('hero');
+
+    const images = [
+        "images/birthday.jpg", 
+        "images/wedding.jpg",
+        "images/meet.jpg", 
+        "images/dining.jpg"    
+    ];
+
+    let index = 0;
+
+    function changeHeroImage() {
+        hero.style.backgroundImage =
+            `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url('${images[index]}')`;
+
+        index = (index + 1) % images.length;
+    }
+
+    // Initial image
+    changeHeroImage();
+
+    // Change every 3 seconds
+    setInterval(changeHeroImage, 3000);
+</script>
