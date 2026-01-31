@@ -97,7 +97,7 @@
     button {
         width: 100%;
         padding: 14px;
-        background-color: #4f46e5;
+        background-color: #1a1a1a;
         border: none;
         border-radius: 12px;
         color: white;
