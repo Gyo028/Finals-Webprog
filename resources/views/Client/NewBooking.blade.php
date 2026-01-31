@@ -1,5 +1,16 @@
 <div class="booking-container">
     <h2>Book a New Event</h2>
+    <a href="{{ route('dashboard') }}" class="back-btn">← Back to Dashboard</a>
+
+    @if ($errors->any())
+        <div class="error-box">
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
     <form id="bookingForm" action="{{ route('bookings.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
@@ -9,7 +20,8 @@
             <select name="event_id" id="event_id" required onchange="updateTotal()">
                 <option value="">-- Choose an Event --</option>
                 @foreach($eventTypes as $event)
-                    <option value="{{ $event->event_id }}" data-price="{{ $event->event_base_price }}">
+                    <option value="{{ $event->event_id }}" data-price="{{ $event->event_base_price }}"
+                        {{ old('event_id') == $event->event_id ? 'selected' : '' }}>
                         {{ $event->event_name }} (₱{{ number_format($event->event_base_price, 2) }})
                     </option>
                 @endforeach
@@ -21,7 +33,8 @@
             <select name="pax_id" id="pax_id" required onchange="updateTotal()">
                 <option value="">-- Select Guest Count --</option>
                 @foreach($paxOptions as $pax)
-                    <option value="{{ $pax->pax_id }}" data-price="{{ $pax->pax_price }}">
+                    <option value="{{ $pax->pax_id }}" data-price="{{ $pax->pax_price }}"
+                        {{ old('pax_id') == $pax->pax_id ? 'selected' : '' }}>
                         {{ $pax->pax_count }} Pax (+₱{{ number_format($pax->pax_price, 2) }})
                     </option>
                 @endforeach
@@ -30,12 +43,14 @@
 
         <div class="form-group">
             <label for="venue_name">Venue Name</label>
-            <input type="text" name="venue_name" id="venue_name" placeholder="e.g., Grand Ballroom" required>
+            <input type="text" name="venue_name" id="venue_name" placeholder="e.g., Grand Ballroom" required
+                   value="{{ old('venue_name') }}">
         </div>
 
         <div class="form-group">
             <label for="venue_address">Full Address</label>
-            <input type="text" name="venue_address" id="venue_address" placeholder="Enter complete address" required>
+            <input type="text" name="venue_address" id="venue_address" placeholder="Enter complete address" required
+                   value="{{ old('venue_address') }}">
         </div>
 
         <div class="form-group">
@@ -46,7 +61,8 @@
                         <input type="checkbox" name="service_id[]" id="service_{{ $service->service_id }}" 
                                value="{{ $service->service_id }}" 
                                data-price="{{ $service->service_price }}" 
-                               onchange="updateTotal()">
+                               onchange="updateTotal()"
+                               {{ (is_array(old('service_id')) && in_array($service->service_id, old('service_id'))) ? 'checked' : '' }}>
                         <label for="service_{{ $service->service_id }}">
                             {{ $service->service_name }} (+₱{{ number_format($service->service_price, 2) }})
                         </label>
@@ -58,18 +74,24 @@
         <div class="form-row">
             <div class="form-group">
                 <label>Event Date</label>
-                <input type="date" name="event_date" required min="{{ date('Y-m-d') }}">
+                @php
+                    $minDate = now()->addMonth()->format('Y-m-d');
+                @endphp
+                <input type="date" name="event_date" required min="{{ $minDate }}" value="{{ old('event_date') }}">
+                <small style="color:#777;">
+                    ⚠ Bookings must be made at least <strong>1 month in advance</strong>.
+                </small>
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
                 <label>Start Time</label>
-                <input type="time" name="event_time" id="event_time" required>
+                <input type="time" name="event_time" id="event_time" required value="{{ old('event_time') }}">
             </div>
             <div class="form-group">
                 <label>End Time</label>
-                <input type="time" name="booking_end_time" id="booking_end_time" required>
+                <input type="time" name="booking_end_time" id="booking_end_time" required value="{{ old('booking_end_time') }}">
             </div>
         </div>
 
@@ -82,7 +104,7 @@
         <div class="form-group">
             <label>Estimated Total Price</label>
             <input type="text" id="display_total" placeholder="₱0.00" readonly class="readonly-input">
-            <input type="hidden" name="total_amount" id="total_amount">
+            <input type="hidden" name="total_amount" id="total_amount" value="{{ old('total_amount') }}">
         </div>
 
         <div class="button-row">
@@ -104,6 +126,20 @@
 </div>
 
 <script>
+    function isDateAtLeastOneMonth() {
+        const dateInput = document.querySelector('input[name="event_date"]');
+        const selectedDate = new Date(dateInput.value);
+        const minDate = new Date();
+        minDate.setMonth(minDate.getMonth() + 1);
+
+        if (selectedDate < minDate) {
+            alert("⚠ Bookings must be made at least 1 month in advance.");
+            dateInput.focus();
+            return false;
+        }
+        return true;
+    }
+
     function updateTotal() {
         const eventSelect = document.getElementById('event_id');
         const paxSelect = document.getElementById('pax_id');
@@ -118,7 +154,6 @@
 
         let servicesPrice = 0;
         const checkedServices = document.querySelectorAll('input[name="service_id[]"]:checked');
-        
         checkedServices.forEach(checkbox => {
             servicesPrice += parseFloat(checkbox.getAttribute('data-price')) || 0;
         });
@@ -134,6 +169,10 @@
     function openConfirmation() {
         if (!form.checkValidity()) {
             form.reportValidity();
+            return;
+        }
+
+        if (!isDateAtLeastOneMonth()) {
             return;
         }
 
@@ -168,14 +207,18 @@
     function submitDraft() {
         form.action = "{{ route('bookings.draft') }}";
         document.getElementById('receipt').required = false;
-        // Make End Time not required for drafts if desired
         document.getElementById('booking_end_time').required = false;
         form.submit();
     }
+
+    // Recalculate total on page load (for sticky old values)
+    document.addEventListener('DOMContentLoaded', function() {
+        updateTotal();
+    });
 </script>
 
 <style>
-    /* ... (Keeping your existing styles) ... */
+    /* ... Keeping your existing styles ... */
     .booking-container { max-width: 550px; margin: 40px auto; padding: 30px; border-radius: 12px; background: #fff; box-shadow: 0 8px 20px rgba(0,0,0,0.1); font-family: sans-serif; }
     h2 { color: #333; text-align: center; margin-bottom: 25px; }
     .form-group { margin-bottom: 20px; }
@@ -204,4 +247,32 @@
     .modal-actions { display: flex; gap: 10px; }
     .cancel-btn { flex: 1; padding: 12px; background: #eee; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
     .confirm-btn { flex: 1; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+    .back-btn {
+        display: inline-block;
+        margin-bottom: 20px;
+        text-decoration: none;
+        color: #3498db;
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .back-btn:hover {
+        text-decoration: underline;
+    }
+
+    .error-box {
+        background: #fee2e2;
+        border: 1px solid #fecaca;
+        color: #7f1d1d;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+
+    .error-box ul {
+        margin: 0;
+        padding-left: 20px;
+    }
 </style>

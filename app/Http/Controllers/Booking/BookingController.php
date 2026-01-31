@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB; 
+use Carbon\Carbon;
 
 class BookingController extends Controller
 {
@@ -24,12 +25,20 @@ class BookingController extends Controller
             'event_id'         => 'required|integer',
             'pax_id'           => 'required|integer',
             'venue_name'       => 'required|string',
-            'event_date'       => 'required|date',
-            'event_time'       => 'required', 
+            'event_date'       => [
+                'required',
+                'date',
+                function ($attribute, $value, $fail) {
+                    if (Carbon::parse($value)->lt(now()->addMonth())) {
+                        $fail('Bookings must be made at least 1 month in advance.');
+                    }
+                },
+            ],
+            'event_time'       => 'required',
             'booking_end_time' => 'required',
             'total_amount'     => 'required|numeric',
             'receipt'          => 'required|image|max:2048',
-        ]);
+        ]);        
 
         DB::transaction(function () use ($request) {
             $user = Auth::user();
