@@ -7,6 +7,8 @@ use App\Http\Controllers\Booking\BookingController;
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 Route::get('/', function () {
     return view('welcome');
@@ -67,12 +69,67 @@ Route::post('/register', [RegisterController::class, 'register'])->name('registe
 Route::get('/dashboard', function () {
     $user = Auth::user();
 
-    // Role 1 = Management, Role 2 = Client
+    // Role 1 = Management
     if ($user && $user->role_id == 1) {
         return view('Management.ManagementDashboard');
-    } 
+    }
 
-    return view('Client.UserDashboard');
+    // ===============================
+    // Client Dashboard Data
+    // ===============================
+
+    // Get client_id of logged-in user
+    $clientId = DB::table('clients')
+        ->where('user_id', $user->user_id)
+        ->value('client_id');
+
+    // If client record does not exist yet
+    if (!$clientId) {
+        return view('Client.UserDashboard', [
+            'completedBookings' => collect(),
+            'upcomingBookings'  => collect(),
+        ]);
+    }
+
+    // ===============================
+    // COMPLETED BOOKINGS (PAST)
+    // ===============================
+    $completedBookings = DB::table('bookings')
+        ->join('events', 'bookings.event_id', '=', 'events.event_id')
+        ->join('venues', 'bookings.venue_id', '=', 'venues.venue_id')
+        ->where('bookings.client_id', $clientId)
+        ->where('bookings.status', 'approved')
+        ->whereDate('bookings.booking_date', '<', Carbon::today())
+        ->orderBy('bookings.booking_date', 'desc')
+        ->select(
+            'bookings.*',
+            'events.event_name',
+            'venues.venue_name'
+        )
+        ->get();
+
+    // ===============================
+    // UPCOMING BOOKINGS (FUTURE)
+    // ===============================
+    $upcomingBookings = DB::table('bookings')
+        ->join('events', 'bookings.event_id', '=', 'events.event_id')
+        ->join('venues', 'bookings.venue_id', '=', 'venues.venue_id')
+        ->where('bookings.client_id', $clientId)
+        ->whereDate('bookings.booking_date', '>=', Carbon::today())
+        ->whereIn('bookings.status', ['approved', 'pending'])
+        ->orderBy('bookings.booking_date', 'asc')
+        ->select(
+            'bookings.*',
+            'events.event_name',
+            'venues.venue_name'
+        )
+        ->limit(1)
+        ->get();
+
+    return view('Client.UserDashboard', compact(
+        'completedBookings',
+        'upcomingBookings'
+    ));
 
 })->middleware(['auth'])->name('dashboard');
 

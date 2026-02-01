@@ -26,20 +26,68 @@
     <!-- DASHBOARD CARDS -->
     <div class="cards">
 
+        <!-- COMPLETED BOOKINGS -->
         <div class="card">
             <h3>Completed Bookings</h3>
-            <div class="empty-state">
-                <img src="https://cdn-icons-png.flaticon.com/512/4076/4076549.png">
-                <p>No completed bookings yet</p>
-            </div>
+
+            @if($completedBookings->count())
+                <div class="booking-list">
+                    @foreach($completedBookings as $booking)
+                        <div class="booking-item">
+                            <div class="booking-header">
+                                <span class="event-name">{{ $booking->event_name }}</span>
+                                <span class="status-badge approved">Completed</span>
+                            </div>
+
+                            <div class="booking-meta">
+                                <span>📅 {{ \Carbon\Carbon::parse($booking->booking_date)->format('F d, Y') }}</span>
+                                <span>📍 {{ $booking->venue_name }}</span>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="empty-state">
+                    <img src="https://cdn-icons-png.flaticon.com/512/4076/4076549.png">
+                    <p>No completed bookings yet</p>
+                </div>
+            @endif
         </div>
 
-        <div class="card">
+        <!-- NEXT BOOKING -->
+        <div class="card highlight">
             <h3>Next Booking</h3>
-            <div class="empty-state">
-                <img src="https://cdn-icons-png.flaticon.com/512/4076/4076604.png">
-                <p>No upcoming bookings</p>
-            </div>
+
+            @if($upcomingBookings->isNotEmpty())
+                @php
+                    $nextBooking = $upcomingBookings->first();
+                @endphp
+
+                <div class="next-booking">
+                    <div class="next-date">
+                        {{ \Carbon\Carbon::parse($nextBooking->booking_date)->format('M d, Y') }}
+                    </div>
+
+                    <h4>{{ $nextBooking->event_name }}</h4>
+
+                    <p class="next-venue">📍 {{ $nextBooking->venue_name }}</p>
+
+                    <div class="time-pill">
+                        ⏰ {{ \Carbon\Carbon::parse($nextBooking->booking_start_time)->format('h:i A') }} - 
+                        {{ \Carbon\Carbon::parse($nextBooking->booking_end_time)->format('h:i A') }}
+                    </div>
+
+
+                    <span class="status-badge {{ $nextBooking->status }}">
+                        {{ ucfirst($nextBooking->status) }}
+                    </span>
+                </div>
+            @else
+                <div class="empty-state">
+                    <img src="https://cdn-icons-png.flaticon.com/512/4076/4076604.png">
+                    <p>No upcoming bookings</p>
+                </div>
+            @endif
         </div>
 
     </div>
@@ -179,6 +227,108 @@ body {
     margin-bottom: 15px;
     opacity: 0.8;
 }
+
+/* BOOKING LIST */
+.booking-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.booking-item {
+    background: #f9fafb;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #eee;
+    transition: 0.2s;
+}
+
+.booking-item:hover {
+    background: #f3f4f6;
+}
+
+.booking-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.event-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.booking-meta {
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+    color: #666;
+    gap: 4px;
+}
+
+/* NEXT BOOKING CARD */
+.card.highlight {
+    border: 2px solid #c9a24d;
+}
+
+.next-booking {
+    text-align: center;
+}
+
+.next-date {
+    font-size: 14px;
+    font-weight: bold;
+    color: #c9a24d;
+    margin-bottom: 10px;
+}
+
+.next-booking h4 {
+    margin: 5px 0;
+    font-size: 20px;
+}
+
+.next-venue {
+    color: #555;
+    margin-bottom: 10px;
+}
+
+/* TIME PILL */
+.time-pill {
+    display: inline-block;
+    background: #eef2ff;
+    color: #3730a3;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+/* STATUS BADGES */
+.status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: capitalize;
+}
+
+.status-badge.approved {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.denied {
+    background: #fee2e2;
+    color: #7f1d1d;
+}
+
 </style>
 
 <script>
