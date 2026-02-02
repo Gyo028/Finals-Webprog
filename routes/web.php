@@ -17,7 +17,7 @@ Route::get('/', function () {
     return view('welcome');
 
     return view('LandingPage.index');
->>>>>>> 502b43f82e0c33224963023a3bb668644d1feb31
+
 });
 
 Route::get('/home', function () {
