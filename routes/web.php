@@ -7,7 +7,6 @@ use App\Http\Controllers\Booking\BookingController;
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 Route::get('/', function () {
     return view('welcome');
@@ -83,13 +82,12 @@ Route::post('/register', [RegisterController::class, 'register'])->name('registe
 Route::get('/dashboard', function () {
     $user = Auth::user();
 
-    // Redirect to Management Dashboard (Role 1)
+    // Role 1 = Management, Role 2 = Client
     if ($user && $user->role_id == 1) {
-        return redirect()->route('management.dashboard');
+        return view('Management.ManagementDashboard');
     } 
 
-    // Redirect to Client Dashboard (Role 2)
-    return redirect()->route('client.dashboard');
+    return view('Client.UserDashboard');
 
 })->middleware(['auth'])->name('dashboard');
 
