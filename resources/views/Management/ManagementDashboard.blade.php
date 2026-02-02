@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 @include('LandingPage.header')
 
 <div class="mgmt-wrap">
@@ -254,3 +255,8 @@
 </style>
 
 @include('LandingPage.footer')
+=======
+<h2>Management Panel</h2>
+<p>Admin: {{ Auth::user()->username }}</p>
+<p>Overview of all bookings will go here.</p>
+>>>>>>> 502b43f82e0c33224963023a3bb668644d1feb31
