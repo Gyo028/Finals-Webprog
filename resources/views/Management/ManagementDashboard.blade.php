@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 @include('LandingPage.header')
 
 <div class="mgmt-wrap">
