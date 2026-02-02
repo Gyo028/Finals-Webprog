@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Http\Controllers\DashboardController;
 
 // Landing Page
 Route::get('/', function () { return view('LandingPage.index'); });
@@ -106,37 +107,8 @@ Route::middleware(['auth'])->group(function () {
     })->name('bookings.reject');
 
     // Client Side (With Data Fetching)
-    Route::get('/client/dashboard', function() {
-        $user = Auth::user();
-        $clientId = DB::table('clients')->where('user_id', $user->user_id)->value('client_id');
-
-        if (!$clientId) {
-            return view('Client.UserDashboard', [
-                'completedBookings' => collect(), 
-                'upcomingBookings' => collect()
-            ]);
-        }
-
-        $completedBookings = DB::table('bookings')
-            ->join('events', 'bookings.event_id', '=', 'events.event_id')
-            ->join('venues', 'bookings.venue_id', '=', 'venues.venue_id')
-            ->where('bookings.client_id', $clientId)
-            ->where('bookings.status', 'approved')
-            ->whereDate('bookings.booking_date', '<', Carbon::today())
-            ->select('bookings.*', 'events.event_name', 'venues.venue_name')
-            ->get();
-
-        $upcomingBookings = DB::table('bookings')
-            ->join('events', 'bookings.event_id', '=', 'events.event_id')
-            ->join('venues', 'bookings.venue_id', '=', 'venues.venue_id')
-            ->where('bookings.client_id', $clientId)
-            ->whereDate('bookings.booking_date', '>=', Carbon::today())
-            ->whereIn('bookings.status', ['approved', 'pending'])
-            ->select('bookings.*', 'events.event_name', 'venues.venue_name')
-            ->get();
-
-        return view('Client.UserDashboard', compact('completedBookings', 'upcomingBookings'));
-    })->name('client.dashboard');
+    Route::get('/client/dashboard', [DashboardController::class, 'index'])
+    ->name('client.dashboard');
 
     // Booking Process Routes
     Route::get('/booking/new', [BookingController::class, 'create'])->name('bookings.new');

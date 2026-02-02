@@ -58,10 +58,7 @@
         <div class="card highlight">
             <h3>Next Booking</h3>
 
-            @if($upcomingBookings->isNotEmpty())
-                @php
-                    $nextBooking = $upcomingBookings->first();
-                @endphp
+            @if($nextBooking)
 
                 <div class="next-booking">
                     <div class="next-date">
@@ -86,6 +83,36 @@
                 <div class="empty-state">
                     <img src="https://cdn-icons-png.flaticon.com/512/4076/4076604.png">
                     <p>No upcoming bookings</p>
+                </div>
+            @endif
+        </div>
+
+        <!-- OTHER BOOKINGS -->
+        <div class="card">
+            <h3>Other Bookings</h3>
+
+            @if($otherBookings->count())
+                <div class="booking-list">
+                    @foreach($otherBookings as $booking)
+                        <div class="booking-item">
+                            <div class="booking-header">
+                                <span class="event-name">{{ $booking->event_name }}</span>
+
+                                <span class="status-badge {{ $booking->status }}">
+                                    {{ ucfirst($booking->status) }}
+                                </span>
+                            </div>
+
+                            <div class="booking-meta">
+                                <span>📅 {{ \Carbon\Carbon::parse($booking->booking_date)->format('F d, Y') }}</span>
+                                <span>📍 {{ $booking->venue_name }}</span>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="empty-state">
+                    <p>No other bookings</p>
                 </div>
             @endif
         </div>
@@ -328,6 +355,17 @@ body {
     background: #fee2e2;
     color: #7f1d1d;
 }
+
+.status-badge.rejected {
+    background: #fee2e2;
+    color: #7f1d1d;
+}
+
+.status-badge.draft {
+    background: #e5e7eb;
+    color: #374151;
+}
+
 
 </style>
 
