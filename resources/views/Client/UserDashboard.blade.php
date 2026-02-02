@@ -107,6 +107,14 @@
                                 <span>📅 {{ \Carbon\Carbon::parse($booking->booking_date)->format('F d, Y') }}</span>
                                 <span>📍 {{ $booking->venue_name }}</span>
                             </div>
+
+                            @if($booking->status === 'draft')
+                                <a href="{{ route('bookings.edit', $booking->booking_id) }}"
+                                class="edit-btn">
+                                    ✏️ Edit Draft
+                                </a>
+                            @endif
+
                         </div>
                     @endforeach
                 </div>
@@ -364,6 +372,19 @@ body {
 .status-badge.draft {
     background: #e5e7eb;
     color: #374151;
+}
+
+.edit-btn {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.edit-btn:hover {
+    text-decoration: underline;
 }
 
 

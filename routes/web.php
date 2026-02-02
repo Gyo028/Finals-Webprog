@@ -59,6 +59,12 @@ Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [RegisterController::class, 'register'])->name('register.store');
+Route::get('/booking/{id}/edit', [BookingController::class, 'edit'])
+    ->name('bookings.edit');
+
+Route::put('/booking/{id}', [BookingController::class, 'update'])
+    ->name('bookings.update');
+
 
 // --- Protected Routes ---
 Route::middleware(['auth'])->group(function () {
