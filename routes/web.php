@@ -7,9 +7,11 @@ use App\Http\Controllers\Booking\BookingController;
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('LandingPage.index');
 });
 
 Route::get('/home', function () {
@@ -17,7 +19,6 @@ Route::get('/home', function () {
 });
 
 // --- Google Authentication Routes ---
-
 Route::get('/auth/google', function () {
     return Socialite::driver('google')->redirect();
 })->name('google.login');
@@ -25,86 +26,98 @@ Route::get('/auth/google', function () {
 Route::get('/auth/google/callback', function () {
     try {
         $googleUser = Socialite::driver('google')->stateless()->user();
-        
         $user = User::where('email', $googleUser->email)->first();
 
         if (!$user) {
-            // 1. Create User
             $user = User::create([
-                'name'          => $googleUser->name,
-                'email'         => $googleUser->email,
-                'username'      => strstr($googleUser->email, '@', true), 
-                'google_id'     => $googleUser->id,
-                'password'      => bcrypt(str()->random(16)), 
-                'role_id'       => 2,    // Client Role
-                'IsActive'      => true, 
+                'name'      => $googleUser->name,
+                'email'     => $googleUser->email,
+                'username'  => strstr($googleUser->email, '@', true), 
+                'google_id' => $googleUser->id,
+                'password'  => bcrypt(str()->random(16)), 
+                'role_id'   => 2,
+                'IsActive'  => true, 
             ]);
 
-            // 2. Create Client Profile (Fixes the missing profile error)
-            // Splitting Google name for your first_name/last_name structure
             $nameParts = explode(' ', $googleUser->name, 2);
             DB::table('clients')->insert([
                 'user_id'    => $user->user_id,
                 'first_name' => $nameParts[0],
                 'last_name'  => $nameParts[1] ?? '',
-                'bday'       => '2000-01-01', // Default to satisfy NOT NULL
+                'bday'       => '2000-01-01',
                 'IsActive'   => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
         } else {
-            $user->update([
-                'google_id' => $googleUser->id,
-                'name'      => $googleUser->name,
-            ]);
+            $user->update(['google_id' => $googleUser->id, 'name' => $googleUser->name]);
         }
 
         Auth::login($user);
-
         return redirect()->route('dashboard');
-
     } catch (\Exception $e) {
         return redirect('/login')->with('error', 'Authentication failed.');
     }
 });
 
-// --- End Google Authentication Routes ---
-
+// --- Authentication Routes ---
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-
 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [RegisterController::class, 'register'])->name('register.store');
 
-// --- Dashboard Traffic Cop ---
-
+// --- Dashboard Traffic Cop & Data Fetcher ---
 Route::get('/dashboard', function () {
     $user = Auth::user();
 
-    // Role 1 = Management, Role 2 = Client
+    // 1. Role 1: Management
     if ($user && $user->role_id == 1) {
         return view('Management.ManagementDashboard');
     } 
 
-    return view('Client.UserDashboard');
+    // 2. Role 2: Client - Data Fetching Logic
+    $clientId = DB::table('clients')
+        ->where('user_id', $user->user_id)
+        ->value('client_id');
+
+    // If client record doesn't exist yet, return empty collections to prevent errors
+    if (!$clientId) {
+        return view('Client.UserDashboard', [
+            'completedBookings' => collect(),
+            'upcomingBookings'  => collect(),
+        ]);
+    }
+
+    // COMPLETED BOOKINGS (Approved + Past Date)
+    $completedBookings = DB::table('bookings')
+        ->join('events', 'bookings.event_id', '=', 'events.event_id')
+        ->join('venues', 'bookings.venue_id', '=', 'venues.venue_id')
+        ->where('bookings.client_id', $clientId)
+        ->where('bookings.status', 'approved')
+        ->whereDate('bookings.booking_date', '<', Carbon::today())
+        ->orderBy('bookings.booking_date', 'desc')
+        ->select('bookings.*', 'events.event_name', 'venues.venue_name')
+        ->get();
+
+    // UPCOMING BOOKINGS (Approved/Pending + Today/Future)
+    $upcomingBookings = DB::table('bookings')
+        ->join('events', 'bookings.event_id', '=', 'events.event_id')
+        ->join('venues', 'bookings.venue_id', '=', 'venues.venue_id')
+        ->where('bookings.client_id', $clientId)
+        ->whereDate('bookings.booking_date', '>=', Carbon::today())
+        ->whereIn('bookings.status', ['approved', 'pending'])
+        ->orderBy('bookings.booking_date', 'asc')
+        ->select('bookings.*', 'events.event_name', 'venues.venue_name')
+        ->limit(1) // Just gets the next upcoming event
+        ->get();
+
+    return view('Client.UserDashboard', compact('completedBookings', 'upcomingBookings'));
 
 })->middleware(['auth'])->name('dashboard');
 
-// Define the specific Dashboard Routes to match your views
+// --- Logged-in Groups ---
 Route::middleware(['auth'])->group(function () {
-    
-    // Management Routes
-    Route::get('/management/dashboard', function() {
-        return view('Management.ManagementDashboard');
-    })->name('management.dashboard');
-
-    // Client Routes
-    Route::get('/client/dashboard', function() {
-        return view('Client.UserDashboard');
-    })->name('client.dashboard');
-
-    // Booking Routes
     Route::get('/booking/new', [BookingController::class, 'create'])->name('bookings.new');
     Route::post('/booking/store', [BookingController::class, 'store'])->name('bookings.store');
     Route::post('/bookings/draft', [BookingController::class, 'draft'])->name('bookings.draft');
