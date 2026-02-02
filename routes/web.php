@@ -70,10 +70,40 @@ Route::middleware(['auth'])->group(function () {
             : redirect()->route('client.dashboard');
     })->name('dashboard');
 
-    // Management Side
+    // Management Side (UPDATED: Added $stats and $payments)
     Route::get('/management/dashboard', function() {
-        return view('Management.ManagementDashboard');
+        // 1. Fetch Bookings
+        $bookings = DB::table('bookings')
+            ->leftJoin('clients', 'bookings.client_id', '=', 'clients.client_id')
+            ->leftJoin('events', 'bookings.event_id', '=', 'events.event_id')
+            ->select('bookings.*', 'clients.first_name', 'clients.last_name', 'events.event_name')
+            ->orderBy('bookings.created_at', 'desc')
+            ->get();
+
+        // 2. Fetch Payments (for the Payments section)
+        $payments = DB::table('payments')->orderBy('created_at', 'desc')->get();
+
+        // 3. Calculate Stats (for the cards)
+        $stats = [
+            'pending'  => DB::table('bookings')->where('status', 'pending')->count(),
+            'approved' => DB::table('bookings')->where('status', 'approved')->count(),
+            'rejected' => DB::table('bookings')->where('status', 'rejected')->count(),
+            'payments' => DB::table('payments')->sum('amount') ?? 0,
+        ];
+
+        return view('Management.ManagementDashboard', compact('bookings', 'payments', 'stats'));
     })->name('management.dashboard');
+
+    // Management Actions: Approve/Reject
+    Route::post('/management/approve/{id}', function ($id) {
+        DB::table('bookings')->where('booking_id', $id)->update(['status' => 'approved', 'updated_at' => now()]);
+        return back()->with('success', 'Booking #'.$id.' Approved!');
+    })->name('bookings.approve');
+
+    Route::post('/management/reject/{id}', function ($id) {
+        DB::table('bookings')->where('booking_id', $id)->update(['status' => 'rejected', 'updated_at' => now()]);
+        return back()->with('success', 'Booking #'.$id.' Rejected.');
+    })->name('bookings.reject');
 
     // Client Side (With Data Fetching)
     Route::get('/client/dashboard', function() {
@@ -81,7 +111,10 @@ Route::middleware(['auth'])->group(function () {
         $clientId = DB::table('clients')->where('user_id', $user->user_id)->value('client_id');
 
         if (!$clientId) {
-            return view('Client.UserDashboard', ['completedBookings' => collect(), 'upcomingBookings' => collect()]);
+            return view('Client.UserDashboard', [
+                'completedBookings' => collect(), 
+                'upcomingBookings' => collect()
+            ]);
         }
 
         $completedBookings = DB::table('bookings')
@@ -105,7 +138,7 @@ Route::middleware(['auth'])->group(function () {
         return view('Client.UserDashboard', compact('completedBookings', 'upcomingBookings'));
     })->name('client.dashboard');
 
-    // Bookings
+    // Booking Process Routes
     Route::get('/booking/new', [BookingController::class, 'create'])->name('bookings.new');
     Route::post('/booking/store', [BookingController::class, 'store'])->name('bookings.store');
     Route::post('/bookings/draft', [BookingController::class, 'draft'])->name('bookings.draft');
