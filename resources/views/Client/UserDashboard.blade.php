@@ -1,6 +1,6 @@
 <!-- HEADER -->
 <header class="top-header">
-    <div class="brand">GR3AT A’s</div>
+    <div class="brand">GR3AT A's</div>
 
     <form action="{{ route('logout') }}" method="POST">
         @csrf
@@ -335,10 +335,10 @@ body {
     const hero = document.getElementById('hero');
 
     const images = [
-        "images/birthday.jpg", 
-        "images/wedding.jpg",
-        "images/meet.jpg", 
-        "images/dining.jpg"    
+        "{{ asset('images/birthday.jpg') }}",
+        "{{ asset('images/wedding.jpg') }}",
+        "{{ asset('images/meet.jpg') }}",
+        "{{ asset('images/dining.jpg') }}"
     ];
 
     let index = 0;
@@ -350,9 +350,7 @@ body {
         index = (index + 1) % images.length;
     }
 
-    // Initial image
     changeHeroImage();
-
-    // Change every 3 seconds
     setInterval(changeHeroImage, 3000);
 </script>
+
