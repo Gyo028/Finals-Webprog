@@ -3,37 +3,25 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\Booking\BookingController; 
-use App\Http\Controllers\ManagementController;
-
+use App\Http\Controllers\Booking\BookingController;
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
-Route::get('/', function () {
+// Landing Page
+Route::get('/', function () { return view('LandingPage.index'); });
+Route::get('/home', function () { return view('LandingPage.index'); });
 
-    return view('welcome');
-
-    return view('LandingPage.index');
-
-});
-
-Route::get('/home', function () {
-    return view('LandingPage.index'); 
-});
-
-// --- Google Authentication Routes ---
+// --- Google Authentication ---
 Route::get('/auth/google', function () {
     return Socialite::driver('google')->redirect();
 })->name('google.login');
 
 Route::get('/auth/google/callback', function () {
     try {
-        // stateless() bypasses session mismatch errors on localhost
         $googleUser = Socialite::driver('google')->stateless()->user();
-        
         $user = User::where('email', $googleUser->email)->first();
 
         if (!$user) {
@@ -43,119 +31,82 @@ Route::get('/auth/google/callback', function () {
                 'username'  => strstr($googleUser->email, '@', true), 
                 'google_id' => $googleUser->id,
                 'password'  => bcrypt(str()->random(16)), 
-                'role_id'   => 2,    // Client Role
+                'role_id'   => 2,
                 'IsActive'  => true, 
             ]);
-        } else {
-            $user->update([
-                'google_id' => $googleUser->id,
-                'name'      => $googleUser->name,
+
+            $nameParts = explode(' ', $googleUser->name, 2);
+            DB::table('clients')->insert([
+                'user_id'    => $user->user_id,
+                'first_name' => $nameParts[0],
+                'last_name'  => $nameParts[1] ?? '',
+                'bday'       => '2000-01-01',
+                'IsActive'   => 1,
+                'created_at' => now(),
             ]);
         }
-
         Auth::login($user);
-
         return redirect()->route('dashboard');
-
     } catch (\Exception $e) {
-        dd($e->getMessage()); 
+        return redirect('/login')->with('error', 'Google auth failed.');
     }
 });
 
-// --- End Google Authentication Routes ---
-
+// --- Auth Routes ---
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-
 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [RegisterController::class, 'register'])->name('register.store');
 
-Route::get('/dashboard', function () {
-    $user = Auth::user();
-
-    // Role 1 = Management
-    if ($user && $user->role_id == 1) {
-        return view('Management.ManagementDashboard');
-    }
-
-    // ===============================
-    // Client Dashboard Data
-    // ===============================
-
-    // Get client_id of logged-in user
-    $clientId = DB::table('clients')
-        ->where('user_id', $user->user_id)
-        ->value('client_id');
-
-    // If client record does not exist yet
-    if (!$clientId) {
-        return view('Client.UserDashboard', [
-            'completedBookings' => collect(),
-            'upcomingBookings'  => collect(),
-        ]);
-    }
-
-    // ===============================
-    // COMPLETED BOOKINGS (PAST)
-    // ===============================
-    $completedBookings = DB::table('bookings')
-        ->join('events', 'bookings.event_id', '=', 'events.event_id')
-        ->join('venues', 'bookings.venue_id', '=', 'venues.venue_id')
-        ->where('bookings.client_id', $clientId)
-        ->where('bookings.status', 'approved')
-        ->whereDate('bookings.booking_date', '<', Carbon::today())
-        ->orderBy('bookings.booking_date', 'desc')
-        ->select(
-            'bookings.*',
-            'events.event_name',
-            'venues.venue_name'
-        )
-        ->get();
-
-    // ===============================
-    // UPCOMING BOOKINGS (FUTURE)
-    // ===============================
-    $upcomingBookings = DB::table('bookings')
-        ->join('events', 'bookings.event_id', '=', 'events.event_id')
-        ->join('venues', 'bookings.venue_id', '=', 'venues.venue_id')
-        ->where('bookings.client_id', $clientId)
-        ->whereDate('bookings.booking_date', '>=', Carbon::today())
-        ->whereIn('bookings.status', ['approved', 'pending'])
-        ->orderBy('bookings.booking_date', 'asc')
-        ->select(
-            'bookings.*',
-            'events.event_name',
-            'venues.venue_name'
-        )
-        ->limit(1)
-        ->get();
-
-    return view('Client.UserDashboard', compact(
-        'completedBookings',
-        'upcomingBookings'
-    ));
-
-})->middleware(['auth'])->name('dashboard');
-
+// --- Protected Routes ---
 Route::middleware(['auth'])->group(function () {
+
+    // Main Dashboard Entry (The Traffic Cop)
+    Route::get('/dashboard', function () {
+        $user = Auth::user();
+        return ($user->role_id == 1) 
+            ? redirect()->route('management.dashboard') 
+            : redirect()->route('client.dashboard');
+    })->name('dashboard');
+
+    // Management Side
+    Route::get('/management/dashboard', function() {
+        return view('Management.ManagementDashboard');
+    })->name('management.dashboard');
+
+    // Client Side (With Data Fetching)
+    Route::get('/client/dashboard', function() {
+        $user = Auth::user();
+        $clientId = DB::table('clients')->where('user_id', $user->user_id)->value('client_id');
+
+        if (!$clientId) {
+            return view('Client.UserDashboard', ['completedBookings' => collect(), 'upcomingBookings' => collect()]);
+        }
+
+        $completedBookings = DB::table('bookings')
+            ->join('events', 'bookings.event_id', '=', 'events.event_id')
+            ->join('venues', 'bookings.venue_id', '=', 'venues.venue_id')
+            ->where('bookings.client_id', $clientId)
+            ->where('bookings.status', 'approved')
+            ->whereDate('bookings.booking_date', '<', Carbon::today())
+            ->select('bookings.*', 'events.event_name', 'venues.venue_name')
+            ->get();
+
+        $upcomingBookings = DB::table('bookings')
+            ->join('events', 'bookings.event_id', '=', 'events.event_id')
+            ->join('venues', 'bookings.venue_id', '=', 'venues.venue_id')
+            ->where('bookings.client_id', $clientId)
+            ->whereDate('bookings.booking_date', '>=', Carbon::today())
+            ->whereIn('bookings.status', ['approved', 'pending'])
+            ->select('bookings.*', 'events.event_name', 'venues.venue_name')
+            ->get();
+
+        return view('Client.UserDashboard', compact('completedBookings', 'upcomingBookings'));
+    })->name('client.dashboard');
+
+    // Bookings
     Route::get('/booking/new', [BookingController::class, 'create'])->name('bookings.new');
     Route::post('/booking/store', [BookingController::class, 'store'])->name('bookings.store');
+    Route::post('/bookings/draft', [BookingController::class, 'draft'])->name('bookings.draft');
 });
-
-Route::post('/bookings/draft', [BookingController::class, 'draft'])->name('bookings.draft');
-
-
-use App\Http\Controllers\ManagementControllers;
-
-Route::get('/dashboard', [ManagementController::class, 'dashboard'])
-    ->middleware('auth')
-    ->name('dashboard');
-
-Route::post('/bookings/{id}/approve', [ManagementController::class, 'approve'])
-    ->middleware('auth')
-    ->name('bookings.approve');
-
-Route::post('/bookings/{id}/reject', [ManagementController::class, 'reject'])
-    ->middleware('auth')
-    ->name('bookings.reject');
