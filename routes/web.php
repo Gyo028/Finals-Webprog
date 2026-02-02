@@ -76,30 +76,52 @@ Route::middleware(['auth'])->group(function () {
             ? redirect()->route('management.dashboard') 
             : redirect()->route('client.dashboard');
     })->name('dashboard');
+        //Management DAshboard
+    Route::get('/management/dashboard', function () {
 
-    // Management Side (UPDATED: Added $stats and $payments)
-    Route::get('/management/dashboard', function() {
-        // 1. Fetch Bookings
-        $bookings = DB::table('bookings')
-            ->leftJoin('clients', 'bookings.client_id', '=', 'clients.client_id')
-            ->leftJoin('events', 'bookings.event_id', '=', 'events.event_id')
-            ->select('bookings.*', 'clients.first_name', 'clients.last_name', 'events.event_name')
-            ->orderBy('bookings.created_at', 'desc')
-            ->get();
+    $status = request('status'); //  get filter value from dropdown
 
-        // 2. Fetch Payments (for the Payments section)
-        $payments = DB::table('payments')->orderBy('created_at', 'desc')->get();
+    $bookingsQuery = DB::table('bookings')
+    ->leftJoin('clients', 'bookings.client_id', '=', 'clients.client_id')
+    ->leftJoin('events', 'bookings.event_id', '=', 'events.event_id')
+    ->leftJoin('paxes', 'bookings.pax_id', '=', 'paxes.pax_id') // ✅ ADD THIS
+    ->select(
+        'bookings.*',
+        'clients.first_name',
+        'clients.last_name',
+        'events.event_name',
+        'paxes.pax_count as pax_count' // ✅ ADD THIS
+    )
+    ->orderBy('bookings.created_at', 'desc');
 
-        // 3. Calculate Stats (for the cards)
-        $stats = [
-            'pending'  => DB::table('bookings')->where('status', 'pending')->count(),
-            'approved' => DB::table('bookings')->where('status', 'approved')->count(),
-            'rejected' => DB::table('bookings')->where('status', 'rejected')->count(),
-            'payments' => DB::table('payments')->sum('amount') ?? 0,
-        ];
 
-        return view('Management.ManagementDashboard', compact('bookings', 'payments', 'stats'));
-    })->name('management.dashboard');
+    // ✅ apply filter only if status is selected
+    if (!empty($status)) {
+        $bookingsQuery->where('bookings.status', $status);
+    }
+    $bookings = $bookingsQuery->get();
+
+    $payments = DB::table('payments')
+    
+    ->leftJoin('bookings', 'payments.booking_id', '=', 'bookings.booking_id')
+    ->leftJoin('clients', 'bookings.client_id', '=', 'clients.client_id')
+    ->select(
+        'payments.*',
+        'clients.first_name as first_name',
+        'clients.last_name as last_name'
+    )
+
+    ->orderBy('created_at', 'desc')->get();
+    $stats = [
+        'pending'  => DB::table('bookings')->where('status', 'pending')->count(),
+        'approved' => DB::table('bookings')->where('status', 'approved')->count(),
+        'denied'   => DB::table('bookings')->where('status', 'denied')->count(), // ✅ use denied
+        'payments' => DB::table('payments')->sum('amount') ?? 0,
+    ];
+
+    return view('Management.ManagementDashboard', compact('bookings', 'payments', 'stats'));
+})->name('management.dashboard');
+
 
     // Management Actions: Approve/Reject
     Route::post('/management/approve/{id}', function ($id) {
@@ -107,10 +129,14 @@ Route::middleware(['auth'])->group(function () {
         return back()->with('success', 'Booking #'.$id.' Approved!');
     })->name('bookings.approve');
 
-    Route::post('/management/reject/{id}', function ($id) {
-        DB::table('bookings')->where('booking_id', $id)->update(['status' => 'rejected', 'updated_at' => now()]);
-        return back()->with('success', 'Booking #'.$id.' Rejected.');
-    })->name('bookings.reject');
+    Route::post('/management/deny/{id}', function ($id) {
+    DB::table('bookings')->where('booking_id', $id)->update([
+        'status' => 'denied',
+        'updated_at' => now(),
+    ]);
+    return back()->with('success', 'Booking #'.$id.' Denied.');
+})->name('bookings.deny');
+
 
     // Client Side (With Data Fetching)
     Route::get('/client/dashboard', [DashboardController::class, 'index'])

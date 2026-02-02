@@ -1,6 +1,15 @@
 @include('LandingPage.header')
 
 <div class="mgmt-wrap">
+
+    {{-- ✅ EXTRA HEADER ACTION (LOGOUT) --}}
+    <div class="mgmt-top-actions">
+        <form action="{{ route('logout') }}" method="POST">
+            @csrf
+            <button type="submit" class="mgmt-logout-btn">LOG OUT</button>
+        </form>
+    </div>
+
     <div class="mgmt-hero">
         <div>
             <h1>Management Dashboard</h1>
@@ -24,8 +33,8 @@
             <div class="mgmt-card-value">{{ $stats['approved'] ?? 0 }}</div>
         </div>
         <div class="mgmt-card">
-            <div class="mgmt-card-title">Rejected</div>
-            <div class="mgmt-card-value">{{ $stats['rejected'] ?? 0 }}</div>
+            <div class="mgmt-card-title">Denied</div>
+            <div class="mgmt-card-value">{{ $stats['denied'] ?? ($stats['rejected'] ?? 0) }}</div>
         </div>
         <div class="mgmt-card">
             <div class="mgmt-card-title">Total Payments</div>
@@ -33,51 +42,76 @@
         </div>
     </div>
 
+    {{-- ✅ BOOKINGS SECTION --}}
     <div class="mgmt-section">
         <div class="mgmt-section-head">
             <h2>Bookings</h2>
+
+            <form method="GET" action="{{ route('management.dashboard') }}">
+                <select name="status" onchange="this.form.submit()" class="mgmt-filter">
+                    <option value="" {{ request('status') == '' ? 'selected' : '' }}>All</option>
+                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                    <option value="denied" {{ request('status') == 'denied' ? 'selected' : '' }}>Denied</option>
+                </select>
+            </form>
         </div>
 
         <div class="mgmt-table-wrap">
             <table class="mgmt-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>Client</th>
+                        <th>Date & Time</th>
                         <th>Status</th>
                         <th style="width:220px;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($bookings as $booking)
-                        @php
-                            $bid = $booking->booking_id ?? $booking->id;
-                        @endphp
+                        @php $bid = $booking->booking_id ?? $booking->id; @endphp
                         <tr>
-                            <td>#{{ $bid }}</td>
+                            <td>
+                                <strong>{{ $booking->first_name }} {{ $booking->last_name }}</strong>
+                            </td>
+
+                            <td>
+                                {{ $booking->booking_date ?? 'N/A' }}<br>
+                                <small style="color:#666;">
+                                    {{ $booking->booking_start_time ?? '' }}
+                                    @if(!empty($booking->booking_end_time))
+                                        – {{ $booking->booking_end_time }}
+                                    @endif
+                                </small>
+                            </td>
+
                             <td>
                                 <span class="mgmt-badge {{ $booking->status }}">
-                                    {{ ucfirst($booking->status) }}
+                                    {{ $booking->status === 'denied' ? 'Denied' : ucfirst($booking->status) }}
                                 </span>
                             </td>
-                            <td>
-                                @if($booking->status === 'pending')
-                                    <form method="POST" action="{{ route('bookings.approve', $bid) }}" class="mgmt-inline">
-                                        @csrf
-                                        <button type="submit" class="mgmt-btn mgmt-approve">Approve</button>
-                                    </form>
 
-                                    <form method="POST" action="{{ route('bookings.reject', $bid) }}" class="mgmt-inline">
-                                        @csrf
-                                        <button type="submit" class="mgmt-btn mgmt-reject">Reject</button>
-                                    </form>
-                                @else
-                                    <em class="mgmt-muted">No action</em>
-                                @endif
+                            <td>
+                                <button
+                                    class="mgmt-btn"
+                                    onclick="openBookingModal(this)"
+
+                                    data-id="{{ $bid }}"
+                                    data-status="{{ $booking->status }}"
+                                    data-client="{{ $booking->first_name }} {{ $booking->last_name }}"
+                                    data-event="{{ $booking->event_name ?? 'N/A' }}"
+                                    data-date="{{ $booking->booking_date ?? 'N/A' }}"
+                                    data-time="{{ ($booking->booking_start_time ?? '') . (!empty($booking->booking_end_time) ? ' – ' . $booking->booking_end_time : '') }}"
+                                    data-pax="{{ $booking->pax_count ?? 'N/A' }}"
+                                    data-receipt="{{ $booking->receipt_path ?? '' }}"
+                                >
+                                    View
+                                </button>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="mgmt-empty">No bookings found</td>
+                            <td colspan="4" class="mgmt-empty">No bookings found</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -85,6 +119,7 @@
         </div>
     </div>
 
+    {{-- ✅ PAYMENTS SECTION --}}
     <div class="mgmt-section">
         <div class="mgmt-section-head">
             <h2>Payments</h2>
@@ -94,7 +129,7 @@
             <table class="mgmt-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>Client</th>
                         <th>Booking ID</th>
                         <th>Amount</th>
                     </tr>
@@ -102,7 +137,12 @@
                 <tbody>
                     @forelse($payments as $payment)
                         <tr>
-                            <td>#{{ $payment->payment_id ?? $payment->id }}</td>
+                            <td>
+                                <strong>
+                                    {{ $payment->first_name ?? 'Unknown' }}
+                                    {{ $payment->last_name ?? '' }}
+                                </strong>
+                            </td>
                             <td>#{{ $payment->booking_id }}</td>
                             <td>₱{{ number_format($payment->amount ?? 0, 2) }}</td>
                         </tr>
@@ -115,7 +155,85 @@
             </table>
         </div>
     </div>
+
 </div>
+
+{{-- MODAL --}}
+<div id="bookingModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9999;">
+    <div style="background:#fff; max-width:750px; margin:50px auto; padding:28px; border-radius:14px; position:relative;">
+
+        <button onclick="closeBookingModal()" style="position:absolute; top:10px; right:12px;">✖</button>
+
+        <h2 style="margin:0 0 12px;">Booking Review</h2>
+
+        <p><b>Client:</b> <span id="m_client"></span></p>
+        <p><b>Event:</b> <span id="m_event"></span></p>
+        <p><b>Date:</b> <span id="m_date"></span></p>
+        <p><b>Time:</b> <span id="m_time"></span></p>
+        <p><b>Pax:</b> <span id="m_pax"></span></p>
+
+        <h3 style="margin-top:18px;">Proof of Payment</h3>
+        <img id="m_receipt_img" style="max-width:100%; display:none; border-radius:8px; border:1px solid #eee;">
+        <p id="m_no_receipt">No receipt uploaded.</p>
+
+        <hr style="margin:18px 0;">
+
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <form id="approveForm" method="POST">
+                @csrf
+                <button type="submit" class="mgmt-btn mgmt-approve">Approve</button>
+            </form>
+
+            <button class="mgmt-btn mgmt-reject" onclick="showReject()">Deny</button>
+        </div>
+
+        <form id="rejectForm" method="POST" style="display:none; margin-top:10px;">
+            @csrf
+            <input name="reason" placeholder="Reason for denial" required style="width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;">
+            <button type="submit" class="mgmt-btn mgmt-reject" style="margin-top:10px;">Confirm Deny</button>
+        </form>
+
+    </div>
+</div>
+
+<script>
+function openBookingModal(btn){
+    document.getElementById('m_client').textContent = btn.dataset.client;
+    document.getElementById('m_event').textContent  = btn.dataset.event;
+    document.getElementById('m_date').textContent   = btn.dataset.date;
+    document.getElementById('m_time').textContent   = btn.dataset.time || 'N/A';
+    document.getElementById('m_pax').textContent    = btn.dataset.pax;
+
+    const receipt = btn.dataset.receipt;
+    const img = document.getElementById('m_receipt_img');
+    const no  = document.getElementById('m_no_receipt');
+
+    if(receipt){
+        img.src = '/' + receipt;
+        img.style.display = 'block';
+        no.style.display = 'none';
+    } else {
+        img.style.display = 'none';
+        no.style.display = 'block';
+    }
+
+    const id = btn.dataset.id;
+    document.getElementById('approveForm').action = `/management/approve/${id}`;
+    document.getElementById('rejectForm').action  = `/management/deny/${id}`;
+
+
+    document.getElementById('rejectForm').style.display = 'none';
+    document.getElementById('bookingModal').style.display = 'block';
+}
+
+function closeBookingModal(){
+    document.getElementById('bookingModal').style.display = 'none';
+}
+
+function showReject(){
+    document.getElementById('rejectForm').style.display = 'block';
+}
+</script>
 
 <style>
     .mgmt-wrap{
@@ -124,6 +242,24 @@
         padding: 0 18px;
         font-family: Arial, sans-serif;
     }
+
+    .mgmt-top-actions{
+        display:flex;
+        justify-content:flex-end;
+        margin: 10px 0 14px;
+    }
+
+    .mgmt-logout-btn{
+        background:#000;
+        color:#fff;
+        border:none;
+        padding:10px 18px;
+        border-radius:10px;
+        cursor:pointer;
+        font-weight:800;
+        letter-spacing:.4px;
+    }
+    .mgmt-logout-btn:hover{ opacity:.9; }
 
     .mgmt-hero{
         background: #111;
@@ -190,6 +326,7 @@
         align-items:center;
         justify-content: space-between;
         margin-bottom: 12px;
+        gap: 12px;
     }
     .mgmt-section h2{
         margin: 0;
@@ -227,9 +364,7 @@
     }
     .mgmt-badge.pending{ background:#fff3cd; color:#856404; }
     .mgmt-badge.approved{ background:#d4edda; color:#155724; }
-    .mgmt-badge.rejected{ background:#f8d7da; color:#721c24; }
-
-    .mgmt-inline{ display:inline; }
+    .mgmt-badge.denied{ background:#f8d7da; color:#721c24; } /* ✅ changed */
 
     .mgmt-btn{
         border: none;
@@ -244,10 +379,19 @@
     .mgmt-reject{ background:#e74c3c; color:#fff; }
     .mgmt-btn:hover{ opacity:.9; }
 
-    .mgmt-muted{ color:#888; }
-
     .mgmt-empty{
         text-align:center;
         color:#888;
         padding: 16px 10px;
     }
+
+    .mgmt-filter{
+        padding: 8px 12px;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        font-weight: 700;
+        outline: none;
+        cursor: pointer;
+        background: #fff;
+    }
+</style>
