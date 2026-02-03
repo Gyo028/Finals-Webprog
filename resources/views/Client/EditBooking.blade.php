@@ -84,6 +84,17 @@
             </div>
         </div>
 
+        {{-- RECEIPT / PROOF OF PAYMENT --}}    
+        <div class="form-group" style="border-top: 1px dashed #ddd; padding-top: 20px;">
+            <label for="receipt">Upload Proof of Payment (Receipt)</label>
+            <input type="file" name="receipt" id="receipt" accept="image/*,.pdf">
+            @if(!empty($booking->receipt))
+                <p>Current receipt uploaded:</p>
+                <img src="{{ asset($booking->receipt) }}" alt="Uploaded Receipt" style="max-width: 200px;">
+            @endif
+            <small style="color: #666;">Optional for Drafts. Required for Submission.</small>
+        </div>
+
         {{-- TOTAL --}}
         <div class="form-group">
             <label>Estimated Total</label>
