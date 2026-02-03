@@ -59,24 +59,43 @@ class BookingController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'event_id'         => 'required|integer',
-            'pax_id'           => 'required|integer',
-            'venue_name'       => 'required|string',
-            'event_date'       => [
-                'required',
-                'date',
-                function ($attribute, $value, $fail) {
-                    if (Carbon::parse($value)->lt(now()->addMonth())) {
-                        $fail('Bookings must be made at least 1 month in advance.');
-                    }
-                },
+        $request->validate(
+            [
+                'event_id'         => 'required|integer',
+                'pax_id'           => 'required|integer',
+                'venue_name'       => 'required|string',
+                'venue_address'    => 'required|string',
+                'event_date'       => [
+                    'required',
+                    'date',
+                    function ($attribute, $value, $fail) {
+                        if (Carbon::parse($value)->lt(now()->addMonth())) {
+                            $fail('Bookings must be made at least 1 month in advance.');
+                        }
+                    },
+                ],
+                'event_time'       => 'required',
+                'booking_end_time' => 'required',
+                'total_amount'     => 'required|numeric',
+                'receipt'          => 'required|image|max:2048',
             ],
-            'event_time'       => 'required',
-            'booking_end_time' => 'required',
-            'total_amount'     => 'required|numeric',
-            'receipt'          => 'required|image|max:2048',
-        ]);        
+            [
+                // Custom messages
+                'venue_address.required' => 'Please select an address from the suggestions.',
+                'receipt.required'       => 'Please upload your proof of payment.',
+            ],
+            [
+                // 👇 Human-friendly field names
+                'event_id'         => 'event type',
+                'pax_id'           => 'number of guests',
+                'venue_name'       => 'venue name',
+                'venue_address'    => 'venue address',
+                'event_date'       => 'event date',
+                'event_time'       => 'start time',
+                'booking_end_time' => 'end time',
+                'receipt'          => 'proof of payment',
+            ]
+        );                       
 
         DB::transaction(function () use ($request) {
             $user = Auth::user();
@@ -215,6 +234,7 @@ class BookingController extends Controller
     {
         $user = Auth::user();
 
+        // Fetch the draft booking for this user
         $booking = DB::table('bookings')
             ->join('clients', 'bookings.client_id', '=', 'clients.client_id')
             ->where('booking_id', $id)
@@ -227,44 +247,67 @@ class BookingController extends Controller
             abort(403, 'Cannot update this booking.');
         }
 
+        // Validation
         $request->validate([
-            'event_id' => 'required',
-            'pax_id' => 'required',
-            'venue_name' => 'required',
-            'venue_address' => 'required',
-            'event_date' => 'required|date',
-            'event_time' => 'required',
+            'event_id'         => 'required',
+            'pax_id'           => 'required',
+            'venue_name'       => 'required',
+            'venue_address'    => 'required',
+            'event_date'       => 'required|date',
+            'event_time'       => 'required',
             'booking_end_time' => 'required',
-            'total_amount' => 'required|numeric',
-            'receipt' => 'required|image|max:2048',
+            'total_amount'     => 'required|numeric',
+            'receipt'          => 'nullable|image|max:2048', // ✅ optional
         ]);
 
         DB::transaction(function () use ($request, $booking, $id) {
 
+            // Update venue
             DB::table('venues')
                 ->where('venue_id', $booking->venue_id)
                 ->update([
-                    'venue_name' => $request->venue_name,
+                    'venue_name'    => $request->venue_name,
                     'venue_address' => $request->venue_address,
-                    'isActive' => 1,
-                    'updated_at' => now(),
+                    'isActive'      => 1,
+                    'updated_at'    => now(),
                 ]);
 
+            // Prepare booking update data
+            $updateData = [
+                'event_id'           => $request->event_id,
+                'pax_id'             => $request->pax_id,
+                'total_price'        => $request->total_amount,
+                'booking_date'       => $request->event_date,
+                'booking_start_time' => $request->event_time,
+                'booking_end_time'   => $request->booking_end_time,
+                'status'             => 'pending',
+                'updated_at'         => now(),
+            ];
+
+            // Handle optional receipt upload
+            if ($request->hasFile('receipt')) {
+                $fileName = 'receipt_' . time() . '.' . $request->file('receipt')->getClientOriginalExtension();
+                $request->file('receipt')->move(public_path('uploads/receipts'), $fileName);
+                $updateData['receipt'] = 'uploads/receipts/' . $fileName;
+
+                // Insert payment record only if new receipt is uploaded
+                DB::table('payments')->insert([
+                    'booking_id'     => $id,
+                    'amount'         => $request->total_amount,
+                    'payment_status' => 'Under Review',
+                    'receipt_path'   => 'uploads/receipts/' . $fileName,
+                    'payment_date'   => now(),
+                    'created_at'     => now(),
+                ]);
+            }
+
+            // Update booking
             DB::table('bookings')
                 ->where('booking_id', $id)
-                ->update([
-                    'event_id' => $request->event_id,
-                    'pax_id' => $request->pax_id,
-                    'total_price' => $request->total_amount,
-                    'booking_date' => $request->event_date,
-                    'booking_start_time' => $request->event_time,
-                    'booking_end_time' => $request->booking_end_time,
-                    'status' => 'pending',
-                    'updated_at' => now(),
-                ]);
+                ->update($updateData);
 
+            // Update services
             DB::table('booking_services')->where('booking_id', $id)->delete();
-
             if ($request->has('service_id')) {
                 foreach ($request->service_id as $serviceId) {
                     DB::table('booking_services')->insert([
@@ -274,24 +317,11 @@ class BookingController extends Controller
                     ]);
                 }
             }
-
-            $fileName = 'receipt_' . time() . '.' . $request->file('receipt')->getClientOriginalExtension();
-            $request->file('receipt')->move(public_path('uploads/receipts'), $fileName);
-
-            DB::table('payments')->insert([
-                'booking_id' => $id,
-                'amount' => $request->total_amount,
-                'payment_status' => 'Under Review',
-                'receipt_path' => 'uploads/receipts/' . $fileName,
-                'payment_date' => now(),
-                'created_at' => now(),
-            ]);
         });
 
         return redirect()
             ->route('client.dashboard')
             ->with('success', 'Draft updated and submitted!');
     }
-
 
 }

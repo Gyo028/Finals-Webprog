@@ -47,10 +47,22 @@
                    value="{{ old('venue_name') }}">
         </div>
 
-        <div class="form-group">
-            <label for="venue_address">Full Address</label>
-            <input type="text" name="venue_address" id="venue_address" placeholder="Enter complete address" required
-                   value="{{ old('venue_address') }}">
+        <div class="form-group" style="position: relative;">
+            <label>Search Venue Address</label>
+            <input type="text"
+                id="address-search"
+                placeholder="Start typing address..."
+                autocomplete="off"
+                required>
+
+            <div id="results-list" class="results-list"></div>
+
+            {{-- This is what gets submitted to DB --}}
+            <input type="hidden"
+                name="venue_address"
+                id="final-address"
+                value="{{ old('venue_address') }}"
+                required>
         </div>
 
         <div class="form-group">
@@ -215,6 +227,61 @@
     document.addEventListener('DOMContentLoaded', function() {
         updateTotal();
     });
+
+    // ---------------- GEOAPIFY ADDRESS AUTOCOMPLETE ----------------
+
+    const searchInput = document.getElementById('address-search');
+    const resultsList = document.getElementById('results-list');
+    const finalAddressInput = document.getElementById('final-address');
+
+    // 🔑 Geoapify API Key
+    const apiKey = "747dc71e45294e16ac66ec0940d2db9c";
+
+    searchInput.addEventListener('input', function () {
+        const text = this.value;
+
+        if (text.length < 3) {
+            resultsList.style.display = 'none';
+            return;
+        }
+
+        fetch(`https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(text)}&apiKey=${apiKey}`)
+            .then(response => response.json())
+            .then(result => {
+                resultsList.innerHTML = "";
+
+                if (result.features && result.features.length > 0) {
+                    resultsList.style.display = 'block';
+
+                    result.features.forEach(feature => {
+                        const address = feature.properties.formatted;
+
+                        const item = document.createElement('div');
+                        item.className = 'result-item';
+                        item.innerText = address;
+
+                        item.addEventListener('click', function () {
+                            searchInput.value = address;
+                            finalAddressInput.value = address; // saved to DB
+                            resultsList.style.display = 'none';
+                        });
+
+                        resultsList.appendChild(item);
+                    });
+                } else {
+                    resultsList.style.display = 'none';
+                }
+            })
+            .catch(err => console.error(err));
+    });
+
+    // Hide results when clicking outside
+    document.addEventListener('click', function (e) {
+        if (!searchInput.contains(e.target)) {
+            resultsList.style.display = 'none';
+        }
+    });
+
 </script>
 
 <style>
@@ -275,4 +342,30 @@
         margin: 0;
         padding-left: 20px;
     }
+
+    /* Address Autocomplete */
+    .results-list {
+        position: absolute;
+        z-index: 999;
+        background: white;
+        border: 1px solid #ddd;
+        width: 100%;
+        border-radius: 0 0 6px 6px;
+        display: none;
+        max-height: 200px;
+        overflow-y: auto;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .result-item {
+        padding: 10px;
+        cursor: pointer;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 14px;
+    }
+
+    .result-item:hover {
+        background-color: #e9ecef;
+    }
+
 </style>
