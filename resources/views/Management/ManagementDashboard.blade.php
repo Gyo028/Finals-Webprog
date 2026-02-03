@@ -33,8 +33,8 @@
             <div class="mgmt-card-value">{{ $stats['approved'] ?? 0 }}</div>
         </div>
         <div class="mgmt-card">
-            <div class="mgmt-card-title">Denied</div>
-            <div class="mgmt-card-value">{{ $stats['denied'] ?? ($stats['rejected'] ?? 0) }}</div>
+            <div class="mgmt-card-title">Rejected</div>
+            <div class="mgmt-card-value">{{ $stats['Rejected'] ?? ($stats['rejected'] ?? 0) }}</div>
         </div>
         <div class="mgmt-card">
             <div class="mgmt-card-title">Total Payments</div>
@@ -87,7 +87,7 @@
 
                             <td>
                                 <span class="mgmt-badge {{ $booking->status }}">
-                                    {{ $booking->status === 'denied' ? 'Denied' : ucfirst($booking->status) }}
+                                    {{ $booking->status === 'denied' ? 'Rejected' : ucfirst($booking->status) }}
                                 </span>
                             </td>
 
@@ -101,9 +101,13 @@
                                     data-client="{{ $booking->first_name }} {{ $booking->last_name }}"
                                     data-event="{{ $booking->event_name ?? 'N/A' }}"
                                     data-date="{{ $booking->booking_date ?? 'N/A' }}"
+                                    data-venue="{{ $booking->venue_name ?? 'N/A' }}"
                                     data-time="{{ ($booking->booking_start_time ?? '') . (!empty($booking->booking_end_time) ? ' – ' . $booking->booking_end_time : '') }}"
-                                    data-pax="{{ $booking->pax_count ?? 'N/A' }}"
+                                    data-pax="{{ $booking->pax ?? 'N/A' }}"
                                     data-receipt="{{ $booking->receipt_path ?? '' }}"
+                                    data-remarks="{{ $booking->verification_remarks ?? '' }}"
+                                    data-receipt="{{ $booking->receipt_path ?? '' }}"   
+
                                 >
                                     View
                                 </button>
@@ -168,9 +172,12 @@
 
         <p><b>Client:</b> <span id="m_client"></span></p>
         <p><b>Event:</b> <span id="m_event"></span></p>
+        <p><b>Venue:</b> <span id="m_venue"></span></p>
         <p><b>Date:</b> <span id="m_date"></span></p>
         <p><b>Time:</b> <span id="m_time"></span></p>
         <p><b>Pax:</b> <span id="m_pax"></span></p>
+        <p><b>Remarks:</b> <span id="m_remarks">—</span></p>
+
 
         <h3 style="margin-top:18px;">Proof of Payment</h3>
         <img id="m_receipt_img" style="max-width:100%; display:none; border-radius:8px; border:1px solid #eee;">
@@ -184,13 +191,13 @@
                 <button type="submit" class="mgmt-btn mgmt-approve">Approve</button>
             </form>
 
-            <button class="mgmt-btn mgmt-reject" onclick="showReject()">Deny</button>
+            <button class="mgmt-btn mgmt-reject" onclick="showReject()">Reject</button>
         </div>
 
         <form id="rejectForm" method="POST" style="display:none; margin-top:10px;">
             @csrf
-            <input name="reason" placeholder="Reason for denial" required style="width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;">
-            <button type="submit" class="mgmt-btn mgmt-reject" style="margin-top:10px;">Confirm Deny</button>
+            <input name="reason" placeholder="Reason for Rejection" required style="width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;">
+            <button type="submit" class="mgmt-btn mgmt-reject" style="margin-top:10px;">Confirm Reject</button>
         </form>
 
     </div>
@@ -200,6 +207,8 @@
 function openBookingModal(btn){
     document.getElementById('m_client').textContent = btn.dataset.client;
     document.getElementById('m_event').textContent  = btn.dataset.event;
+    document.getElementById('m_venue').textContent = btn.dataset.venue || 'N/A';
+    document.getElementById('m_remarks').textContent = btn.dataset.remarks || '—';
     document.getElementById('m_date').textContent   = btn.dataset.date;
     document.getElementById('m_time').textContent   = btn.dataset.time || 'N/A';
     document.getElementById('m_pax').textContent    = btn.dataset.pax;
@@ -208,14 +217,15 @@ function openBookingModal(btn){
     const img = document.getElementById('m_receipt_img');
     const no  = document.getElementById('m_no_receipt');
 
-    if(receipt){
-        img.src = '/' + receipt;
-        img.style.display = 'block';
-        no.style.display = 'none';
-    } else {
-        img.style.display = 'none';
-        no.style.display = 'block';
-    }
+    if (receipt) {
+    img.src = '/' + receipt;   // ✅ results in /uploads/receipts/filename.png
+    img.style.display = 'block';
+    no.style.display = 'none';
+} else {
+    img.style.display = 'none';
+    no.style.display = 'block';
+}
+
 
     const id = btn.dataset.id;
     document.getElementById('approveForm').action = `/management/approve/${id}`;

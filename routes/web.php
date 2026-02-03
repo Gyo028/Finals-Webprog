@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Http\Controllers\DashboardController;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\MyEmail;
 
 // Landing Page
 Route::get('/', function () { return view('LandingPage.index'); });
@@ -84,13 +86,17 @@ Route::middleware(['auth'])->group(function () {
     $bookingsQuery = DB::table('bookings')
     ->leftJoin('clients', 'bookings.client_id', '=', 'clients.client_id')
     ->leftJoin('events', 'bookings.event_id', '=', 'events.event_id')
-    ->leftJoin('paxes', 'bookings.pax_id', '=', 'paxes.pax_id') // ✅ ADD THIS
+    ->leftJoin('venues', 'bookings.venue_id', '=', 'venues.venue_id')
+    ->leftJoin('paxes', 'bookings.pax_id', '=', 'paxes.pax_id')
+    ->leftJoin('payments', 'bookings.booking_id', '=', 'payments.booking_id') // ✅ IMPORTANT
     ->select(
         'bookings.*',
         'clients.first_name',
         'clients.last_name',
         'events.event_name',
-        'paxes.pax_count as pax_count' // ✅ ADD THIS
+        'venues.venue_name',
+        'paxes.pax_count as pax',
+        'payments.receipt_path' // ✅ THIS IS THE KEY
     )
     ->orderBy('bookings.created_at', 'desc');
 
@@ -124,19 +130,75 @@ Route::middleware(['auth'])->group(function () {
 
 
     // Management Actions: Approve/Reject
-    Route::post('/management/approve/{id}', function ($id) {
-        DB::table('bookings')->where('booking_id', $id)->update(['status' => 'approved', 'updated_at' => now()]);
-        return back()->with('success', 'Booking #'.$id.' Approved!');
-    })->name('bookings.approve');
+    // ✅ Management Actions: Approve
+Route::post('/management/approve/{id}', function ($id) {
 
-    Route::post('/management/deny/{id}', function ($id) {
-    DB::table('bookings')->where('booking_id', $id)->update([
-        'status' => 'denied',
-        'updated_at' => now(),
-    ]);
+    DB::table('bookings')
+        ->where('booking_id', $id)
+        ->update([
+            'status' => 'approved',
+            'updated_at' => now()
+        ]);
+
+    // ✅ Get client email + name (correct join keys)
+    $client = DB::table('bookings')
+        ->join('clients', 'bookings.client_id', '=', 'clients.client_id')
+        ->join('users', 'clients.user_id', '=', 'users.user_id') // ✅ important (NOT users.id)
+        ->where('bookings.booking_id', $id)
+        ->select('users.email', 'clients.first_name', 'clients.last_name')
+        ->first();
+
+    // ✅ Send email (only if email exists)
+    if ($client && $client->email) {
+        $data = [
+            'clientName' => $client->first_name . ' ' . $client->last_name,
+            'status'     => 'approved',
+            'remarks'    => null,
+            'bookingId'  => $id
+        ];
+
+        Mail::to($client->email)->send(new MyEmail($data));
+    }
+
+    return back()->with('success', 'Booking #'.$id.' Approved!');
+})->name('bookings.approve');
+
+
+// ✅ Management Actions: Deny
+Route::post('/management/deny/{id}', function ($id) {
+
+    $reason = request('reason');
+
+    DB::table('bookings')
+        ->where('booking_id', $id)
+        ->update([
+            'status' => 'denied',
+            'verification_remarks' => $reason,
+            'updated_at' => now()
+        ]);
+
+    // ✅ Get client email + name
+    $client = DB::table('bookings')
+        ->join('clients', 'bookings.client_id', '=', 'clients.client_id')
+        ->join('users', 'clients.user_id', '=', 'users.user_id') // ✅ important
+        ->where('bookings.booking_id', $id)
+        ->select('users.email', 'clients.first_name', 'clients.last_name')
+        ->first();
+
+    // ✅ Send email
+    if ($client && $client->email) {
+        $data = [
+            'clientName' => $client->first_name . ' ' . $client->last_name,
+            'status'     => 'denied',
+            'remarks'    => $reason,
+            'bookingId'  => $id
+        ];
+
+        Mail::to($client->email)->send(new MyEmail($data));
+    }
+
     return back()->with('success', 'Booking #'.$id.' Denied.');
 })->name('bookings.deny');
-
 
     // Client Side (With Data Fetching)
     Route::get('/client/dashboard', [DashboardController::class, 'index'])
@@ -146,4 +208,26 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/booking/new', [BookingController::class, 'create'])->name('bookings.new');
     Route::post('/booking/store', [BookingController::class, 'store'])->name('bookings.store');
     Route::post('/bookings/draft', [BookingController::class, 'draft'])->name('bookings.draft');
+});
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Send test email (REAL)
+|--------------------------------------------------------------------------
+*/
+Route::get('/test-email', function () {
+
+    $data = [
+        'clientName' => 'Test User',
+        'status' => 'approved',
+        'remarks' => null,
+    ];
+
+    Mail::to('yourgmail@gmail.com')->send(new MyEmail($data));
+
+    return 'Email sent successfully!';
 });
