@@ -191,40 +191,67 @@ class BookingController extends Controller
     {
         $user = Auth::user();
 
+        // Ensure the client exists
         $clientId = DB::table('clients')
             ->where('user_id', $user->user_id)
             ->value('client_id');
 
         if (!$clientId) {
             $clientId = DB::table('clients')->insertGetId([
-                'user_id'    => $user->user_id,
+                'user_id' => $user->user_id,
                 'first_name' => 'Draft',
-                'last_name'  => 'User',
-                'IsActive'   => 1,
+                'last_name' => 'User',
+                'IsActive' => 1,
                 'created_at' => now(),
             ]);
         }
 
+        // VALIDATION for draft
+        $request->validate([
+            'event_id'        => 'required|integer',
+            'pax_id'          => 'required|integer',
+            'venue_name'      => 'required|string',
+            'venue_address'   => 'required|string',
+            'event_date'      => 'required|date',
+            'event_time'      => 'required',
+            'booking_end_time'=> 'required',
+            'total_amount'    => 'nullable|numeric',
+            'receipt'         => 'nullable|image|max:2048', // optional for draft
+        ], [
+            'event_id.required'       => 'Please select an event type.',
+            'pax_id.required'         => 'Please select number of guests.',
+            'venue_name.required'     => 'Please enter a venue name.',
+            'venue_address.required'  => 'Please select a venue address from suggestions.',
+            'event_date.required'     => 'Please select an event date.',
+            'event_time.required'     => 'Please select a start time.',
+            'booking_end_time.required'=> 'Please select an end time.',
+            'receipt.image'           => 'The receipt must be an image file.',
+        ]);
+
+        // Insert venue
         $venueId = DB::table('venues')->insertGetId([
-            'venue_name'    => $request->venue_name ?? 'Untitled Draft',
-            'venue_address' => $request->venue_address ?? '',
-            'isActive'      => 0,
+            'venue_name'    => $request->venue_name,
+            'venue_address' => $request->venue_address,
+            'isActive'      => 0, // inactive until submission
             'created_at'    => now(),
         ]);
 
+        // Insert booking as draft
         $bookingId = DB::table('bookings')->insertGetId([
-            'client_id'          => $clientId,
-            'event_id'           => $request->event_id,
-            'pax_id'             => $request->pax_id,
-            'venue_id'           => $venueId,
-            'booking_date'       => $request->event_date,
-            'booking_start_time' => $request->event_time,
-            'booking_end_time'   => $request->booking_end_time ?? '00:00:00',
-            'total_price'        => $request->total_amount ?? 0,
-            'status'             => 'draft',
-            'created_at'         => now(),
+            'client_id'           => $clientId,
+            'event_id'            => $request->event_id,
+            'pax_id'              => $request->pax_id,
+            'venue_id'            => $venueId,
+            'booking_date'        => $request->event_date,
+            'booking_start_time'  => $request->event_time,
+            'booking_end_time'    => $request->booking_end_time,
+            'total_price'         => $request->total_amount ?? 0,
+            'status'              => 'draft',
+            'created_at'          => now(),
+            'updated_at'          => now(),
         ]);
 
+        // Attach services if any
         if ($request->has('service_id')) {
             foreach ($request->service_id as $serviceId) {
                 DB::table('booking_services')->insert([
