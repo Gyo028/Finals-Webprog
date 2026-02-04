@@ -1,5 +1,3 @@
-
-
 <div class="mgmt-wrap">
 
     {{-- ✅ EXTRA HEADER ACTION (LOGOUT) --}}
@@ -23,6 +21,7 @@
         </div>
     @endif
 
+    {{-- ✅ STATS CARDS --}}
     <div class="mgmt-cards">
         <div class="mgmt-card">
             <div class="mgmt-card-title">Pending</div>
@@ -74,7 +73,6 @@
                             <td>
                                 <strong>{{ $booking->first_name }} {{ $booking->last_name }}</strong>
                             </td>
-
                             <td>
                                 {{ $booking->booking_date ?? 'N/A' }}<br>
                                 <small style="color:#666;">
@@ -84,18 +82,15 @@
                                     @endif
                                 </small>
                             </td>
-
                             <td>
                                 <span class="mgmt-badge {{ $booking->status }}">
                                     {{ $booking->status === 'denied' ? 'Rejected' : ucfirst($booking->status) }}
                                 </span>
                             </td>
-
                             <td>
                                 <button
                                     class="mgmt-btn"
                                     onclick="openBookingModal(this)"
-
                                     data-id="{{ $bid }}"
                                     data-status="{{ $booking->status }}"
                                     data-client="{{ $booking->first_name }} {{ $booking->last_name }}"
@@ -106,8 +101,6 @@
                                     data-pax="{{ $booking->pax ?? 'N/A' }}"
                                     data-receipt="{{ $booking->receipt_path ?? '' }}"
                                     data-remarks="{{ $booking->verification_remarks ?? '' }}"
-                                    data-receipt="{{ $booking->receipt_path ?? '' }}"   
-
                                 >
                                     View
                                 </button>
@@ -162,89 +155,68 @@
 
 </div>
 
-{{-- MODAL --}}
-<div id="bookingModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9999;">
-    <div style="background:#fff; max-width:750px; margin:50px auto; padding:28px; border-radius:14px; position:relative;">
+{{-- ✅ INJECT THE SEGREGATED MODAL PARTIAL --}}
+@include('management.partials.booking-modal')
 
-        <button onclick="closeBookingModal()" style="position:absolute; top:10px; right:12px;">✖</button>
+{{-- ✅ JAVASCRIPT LOGIC --}}
+{{-- resources/views/management/dashboard.blade.php --}}
 
-        <h2 style="margin:0 0 12px;">Booking Review</h2>
+{{-- ... existing stats and table code ... --}}
 
-        <p><b>Client:</b> <span id="m_client"></span></p>
-        <p><b>Event:</b> <span id="m_event"></span></p>
-        <p><b>Venue:</b> <span id="m_venue"></span></p>
-        <p><b>Date:</b> <span id="m_date"></span></p>
-        <p><b>Time:</b> <span id="m_time"></span></p>
-        <p><b>Pax:</b> <span id="m_pax"></span></p>
-        <p><b>Remarks:</b> <span id="m_remarks">—</span></p>
+@include('management.partials.booking-modal')
 
-
-        <h3 style="margin-top:18px;">Proof of Payment</h3>
-        <img id="m_receipt_img" style="max-width:100%; display:none; border-radius:8px; border:1px solid #eee;">
-        <p id="m_no_receipt">No receipt uploaded.</p>
-
-        <hr style="margin:18px 0;">
-
-        <div style="display:flex; gap:10px; justify-content:flex-end;">
-            <form id="approveForm" method="POST">
-                @csrf
-                <button type="submit" class="mgmt-btn mgmt-approve">Approve</button>
-            </form>
-
-            <button class="mgmt-btn mgmt-reject" onclick="showReject()">Reject</button>
-        </div>
-
-        <form id="rejectForm" method="POST" style="display:none; margin-top:10px;">
-            @csrf
-            <input name="reason" placeholder="Reason for Rejection" required style="width:100%; padding:10px; border:1px solid #ddd; border-radius:10px;">
-            <button type="submit" class="mgmt-btn mgmt-reject" style="margin-top:10px;">Confirm Reject</button>
-        </form>
-
-    </div>
-</div>
-
+{{-- ✅ UPDATED JAVASCRIPT LOGIC --}}
 <script>
-function openBookingModal(btn){
+function openBookingModal(btn) {
+    // Populate text fields
     document.getElementById('m_client').textContent = btn.dataset.client;
     document.getElementById('m_event').textContent  = btn.dataset.event;
-    document.getElementById('m_venue').textContent = btn.dataset.venue || 'N/A';
+    document.getElementById('m_venue').textContent  = btn.dataset.venue || 'N/A';
     document.getElementById('m_remarks').textContent = btn.dataset.remarks || '—';
     document.getElementById('m_date').textContent   = btn.dataset.date;
     document.getElementById('m_time').textContent   = btn.dataset.time || 'N/A';
     document.getElementById('m_pax').textContent    = btn.dataset.pax;
 
+    // Handle Receipt Image Logic
     const receipt = btn.dataset.receipt;
     const img = document.getElementById('m_receipt_img');
-    const no  = document.getElementById('m_no_receipt');
+    const noReceipt = document.getElementById('m_no_receipt');
 
     if (receipt) {
-    img.src = '/' + receipt;   // ✅ results in /uploads/receipts/filename.png
-    img.style.display = 'block';
-    no.style.display = 'none';
-} else {
-    img.style.display = 'none';
-    no.style.display = 'block';
-}
+        img.src = '/' + receipt; 
+        img.style.display = 'block';
+        noReceipt.style.display = 'none';
+    } else {
+        img.style.display = 'none';
+        noReceipt.style.display = 'block';
+    }
 
-
+    // Set Form Action URLs
     const id = btn.dataset.id;
     document.getElementById('approveForm').action = `/management/approve/${id}`;
     document.getElementById('rejectForm').action  = `/management/deny/${id}`;
 
-
+    // Reset Rejection form visibility
     document.getElementById('rejectForm').style.display = 'none';
-    document.getElementById('bookingModal').style.display = 'block';
+    document.getElementById('action-buttons').style.display = 'flex';
+
+    // ✅ SHOW MODAL AS FLEX (Crucial for centering)
+    const modal = document.getElementById('bookingModal');
+    modal.style.display = 'flex';
 }
 
-function closeBookingModal(){
+function closeBookingModal() {
     document.getElementById('bookingModal').style.display = 'none';
 }
 
-function showReject(){
+function showReject() {
+    // Hide original buttons and show rejection input
+    document.getElementById('action-buttons').style.display = 'none';
     document.getElementById('rejectForm').style.display = 'block';
 }
 </script>
 
+{{-- ✅ MAIN DASHBOARD STYLES --}}
 <style>
     .mgmt-wrap{
         max-width: 1100px;
@@ -374,7 +346,7 @@ function showReject(){
     }
     .mgmt-badge.pending{ background:#fff3cd; color:#856404; }
     .mgmt-badge.approved{ background:#d4edda; color:#155724; }
-    .mgmt-badge.denied{ background:#f8d7da; color:#721c24; } /* ✅ changed */
+    .mgmt-badge.denied{ background:#f8d7da; color:#721c24; }
 
     .mgmt-btn{
         border: none;
