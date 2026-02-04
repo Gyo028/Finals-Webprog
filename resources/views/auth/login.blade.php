@@ -123,7 +123,7 @@
         background-color: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 12px;
-        color: #1a202c !important; /* Overriding global link color */
+        color: #1a202c !important;
         font-size: 15px;
         font-weight: 600;
         text-decoration: none;
@@ -200,9 +200,24 @@
         <form action="/login" method="POST">
             @csrf
             <h2>Login</h2>
-            
+
+            <!-- Error & Info Messages -->
+            @if(session('message'))
+                <div class="error-text" style="background: #fefce8; border: 1px solid #fef08a; color: #b45309;">
+                    {{ session('message') }}
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="error-text">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             @if($errors->any())
-                <p class="error-text">{{ $errors->first() }}</p>
+                <div class="error-text">
+                    {{ $errors->first() }}
+                </div>
             @endif
 
             <input type="text" name="login" placeholder="Username or Email" value="{{ old('login') }}" required autofocus>

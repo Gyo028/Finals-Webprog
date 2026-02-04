@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail; 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
 
@@ -21,15 +22,15 @@ class User extends Authenticatable
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'name',          // Required for Google
-        'username',      // Required for your table
+        'name',
+        'username',
         'email',
         'password',
-        'google_id',     // Required for Google
+        'google_id',
         'role_id',
         'IsActive',
         'mobile_number',
-];
+    ];
 
     protected $hidden = [
         'password',
@@ -50,17 +51,14 @@ class User extends Authenticatable
 
     /** Relationships **/
 
-    // Links to the roles table
     public function role(): BelongsTo {
         return $this->belongsTo(Role::class, 'role_id', 'role_id');
     }
 
-    // Links to the clients table (profile)
     public function client(): HasOne {
         return $this->hasOne(Client::class, 'user_id', 'user_id');
     }
 
-    // Links to the managers table (profile)
     public function manager(): HasOne {
         return $this->hasOne(Manager::class, 'user_id', 'user_id');
     }
