@@ -92,19 +92,16 @@
                                     class="mgmt-btn"
                                     onclick="openBookingModal(this)"
                                     data-id="{{ $booking->booking_id }}"
-                                    {{-- FIX: Access client name through the relationship --}}
                                     data-client="{{ $booking->client->first_name ?? 'N/A' }} {{ $booking->client->last_name ?? '' }}"
-                                    {{-- Relationship access --}}
                                     data-event="{{ $booking->event->event_name ?? 'N/A' }}"
-                                    {{-- FIX: Check both common pax column names just in case --}}
                                     data-pax="{{ $booking->pax->pax_description ?? ($booking->pax->pax_count ?? 'N/A') }}"
                                     data-venue="{{ $booking->venue->venue_name ?? 'N/A' }}"
                                     data-address="{{ $booking->venue->venue_address ?? '' }}"
-                                    {{-- Carbon formatting is now safe because $booking is an Eloquent Model --}}
+                                    {{-- NEW: Converts multiple services into a comma-separated string --}}
+                                    data-services="{{ $booking->services->pluck('service_name')->implode(', ') ?: 'None' }}"
                                     data-date="{{ $booking->booking_date ? $booking->booking_date->format('Y-m-d') : '' }}"
                                     data-start-time="{{ $booking->booking_start_time }}"
                                     data-end-time="{{ $booking->booking_end_time }}"
-                                    {{-- Accessing the receipt from the payments collection --}}
                                     data-receipt="{{ $booking->payments->first()->receipt_path ?? '' }}"
                                     data-remarks="{{ $booking->verification_remarks ?? '' }}"
                                 >
@@ -215,8 +212,14 @@ function openBookingModal(btn) {
     document.getElementById('m_event').textContent  = ds.event || 'N/A';
     document.getElementById('m_pax').textContent    = ds.pax || 'N/A';
     
+    // NEW: Populate Services
+    // Ensure you have an element with id="m_services" in your modal HTML
+    const servicesElem = document.getElementById('m_services');
+    if (servicesElem) {
+        servicesElem.textContent = (ds.services && ds.services !== "null") ? ds.services : 'None Selected';
+    }
+
     // 2. Venue & Address
-    // Note: Ensure your HTML has an element with id="m_address"
     document.getElementById('m_venue').textContent   = ds.venue || 'N/A';
     const addressElem = document.getElementById('m_address');
     if (addressElem) {
@@ -227,7 +230,6 @@ function openBookingModal(btn) {
     const dateElem = document.getElementById('m_date');
     if (ds.date && ds.date !== 'N/A') {
         const d = new Date(ds.date);
-        // Formats to "April-11-2025"
         const month = d.toLocaleString('en-US', { month: 'long' });
         dateElem.textContent = `${month}-${d.getDate()}-${d.getFullYear()}`;
     } else {
@@ -235,7 +237,6 @@ function openBookingModal(btn) {
     }
 
     // 4. Time Formatting
-    // JS converts data-start-time to ds.startTime and data-end-time to ds.endTime
     const startTime = formatTo12Hour(ds.startTime);
     const endTime = formatTo12Hour(ds.endTime);
     document.getElementById('m_time').textContent = (startTime !== 'N/A') ? `${startTime} - ${endTime}` : 'N/A';
@@ -244,7 +245,6 @@ function openBookingModal(btn) {
     const img = document.getElementById('m_receipt_img');
     const noRec = document.getElementById('m_no_receipt');
     
-    // Ensure we don't try to load a literal "null" string as an image path
     if (ds.receipt && ds.receipt !== "null" && ds.receipt.trim() !== "") {
         img.src = ds.receipt.startsWith('http') ? ds.receipt : '/' + ds.receipt; 
         img.style.display = 'block'; 
@@ -256,7 +256,6 @@ function openBookingModal(btn) {
     }
 
     // 6. Remarks & Form Actions
-    // Maps to 'verification_remarks' from your database
     document.getElementById('m_admin_notes').value = (ds.remarks && ds.remarks !== "null") ? ds.remarks : ""; 
     
     const id = ds.id;

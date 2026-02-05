@@ -11,11 +11,13 @@
         {{-- TOP SECTION: 50/50 SPLIT --}}
         <div class="mgmt-modal-flex">
             <div class="mgmt-modal-column">
+                {{-- Client Info --}}
                 <div class="detail-item highlight-client">
                     <span class="detail-label">👤 Client</span>
                     <span id="m_client" class="detail-value"></span>
                 </div>
 
+                {{-- Event & Pax Row --}}
                 <div class="detail-row">
                     <div class="detail-item">
                         <span class="detail-label">🎉 Event</span>
@@ -27,13 +29,14 @@
                     </div>
                 </div>
 
-                {{-- UPDATED VENUE SECTION --}}
+                {{-- Venue & Address --}}
                 <div class="detail-item">
                     <span class="detail-label">📍 Venue & Address</span>
                     <span id="m_venue" class="detail-value" style="color: #0f172a; font-weight: 700;"></span>
                     <span id="m_address" class="detail-address"></span>
                 </div>
 
+                {{-- Date & Time Row --}}
                 <div class="detail-row">
                     <div class="detail-item">
                         <span class="detail-label">📅 Date</span>
@@ -44,8 +47,15 @@
                         <span id="m_time" class="detail-value"></span>
                     </div>
                 </div>
+
+                {{-- NEW: Selected Services Section --}}
+                <div class="detail-item highlight-services">
+                    <span class="detail-label">🍱 Selected Services</span>
+                    <span id="m_services" class="detail-value"></span>
+                </div>
             </div>
 
+            {{-- Right Column: Proof of Payment --}}
             <div class="mgmt-modal-column">
                 <h3 class="payment-title">Proof of Payment</h3>
                 <div class="mgmt-receipt-container">
@@ -58,14 +68,15 @@
             </div>
         </div>
 
+        <hr class="mgmt-hr">
+
         {{-- MANAGER REVIEW NOTES --}}
         <div class="mgmt-admin-notes">
             <span class="detail-label">📝 Review Notes / Rejection Reason</span>
             <textarea id="m_admin_notes" 
                 placeholder="Add internal notes for approval OR the reason for rejection here..."></textarea>
         </div>
-
-        <hr class="mgmt-hr">
+        <br>
 
         {{-- ACTION BUTTONS --}}
         <div id="action-buttons" class="mgmt-modal-footer">
@@ -73,7 +84,7 @@
             <form id="approveForm" method="POST" onsubmit="syncNotes('approveForm')" style="margin:0;">
                 @csrf
                 <input type="hidden" name="admin_notes" class="hidden-notes">
-                <button type="submit" class="mgmt-btn mgmt-approve">Approve Booking</button>
+                <button type="submit" class="mgmt-btn mgmt-approve">Approve</button>
             </form>
 
             {{-- REJECT FORM --}}
@@ -87,17 +98,6 @@
 </div>
 
 <style>
-/* ... (All your previous styles remain exactly the same) ... */
-
-/* ADD THIS NEW STYLE FOR THE ADDRESS LINE */
-.detail-address {
-    font-size: 13px;
-    color: #64748b;
-    margin-top: 2px;
-    font-weight: 400;
-    line-height: 1.4;
-}
-
 /* Base Styles & Typography */
 .mgmt-modal-content { 
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -165,15 +165,38 @@
     width: 100%; 
 }
 
+/* Primary Highlight (Client) */
 .highlight-client { 
     background: #f0f7ff; 
     border-color: #bae6fd; 
 }
-
 .highlight-client .detail-value { 
     font-size: 18px; 
     font-weight: 700; 
     color: #0369a1; 
+}
+
+/* Secondary Highlight (Services) */
+.highlight-services {
+    background: #faf5ff; 
+    border-color: #e9d5ff;
+}
+.highlight-services .detail-label {
+    color: #7e22ce; 
+}
+.highlight-services .detail-value {
+    color: #6b21a8; 
+    font-weight: 600;
+}
+
+/* Venue Address Styling */
+.detail-address {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 4px;
+    font-weight: 400;
+    line-height: 1.4;
+    display: block;
 }
 
 /* Receipt Area */
@@ -197,9 +220,7 @@
     justify-content: center; 
     overflow: hidden; 
 }
-
 .mgmt-receipt-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
-
 .no-receipt-box { text-align: center; color: #94a3b8; font-weight: 500; }
 
 /* Input Area */
@@ -217,7 +238,6 @@
     background: #fcfcfc;
     transition: all 0.2s ease;
 }
-
 .mgmt-admin-notes textarea:focus {
     outline: none;
     border-color: #3b82f6;
@@ -227,7 +247,6 @@
 
 /* Footer & Buttons */
 .mgmt-hr { border: 0; border-top: 1px solid #f1f5f9; margin: 24px 0; }
-
 .mgmt-modal-footer { display: flex; justify-content: flex-end; gap: 12px; }
 
 .mgmt-btn { 
@@ -240,10 +259,8 @@
     border: none; 
     transition: all 0.2s ease; 
 }
-
 .mgmt-approve { background: #10b981; color: #fff; }
 .mgmt-approve:hover { background: #059669; transform: translateY(-1px); }
-
 .mgmt-reject { background: #fff; color: #ef4444; border: 1px solid #fee2e2; }
 .mgmt-reject:hover { background: #fef2f2; border-color: #fecaca; }
 
@@ -264,6 +281,5 @@
     font-size: 16px;
     transition: 0.2s;
 }
-
 .mgmt-modal-close:hover { background: #e2e8f0; color: #0f172a; }
 </style>

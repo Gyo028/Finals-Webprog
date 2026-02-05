@@ -14,34 +14,34 @@ class ManagementController extends Controller
     /**
      * Display the management dashboard with eager-loaded bookings and stats.
      */
-    public function dashboard(Request $request)
-    {
-        $status = $request->query('status');
+public function dashboard(Request $request)
+{
+    $status = $request->query('status');
 
-        // Eager load all relationships to ensure Blade data-attributes have values.
-        // This prevents the "N/A" issue in your modal.
-        $query = Booking::with(['client', 'venue', 'event', 'pax', 'payments'])
-                        ->latest();
+    // Added 'services' to the eager-loading array
+    // This allows the Blade button to access the many-to-many relationship
+    $query = Booking::with(['client', 'venue', 'event', 'pax', 'payments', 'services'])
+                    ->latest();
 
-        if (!empty($status)) {
-            $query->where('status', $status);
-        }
-
-        $bookings = $query->get();
-
-        // Calculate statistics for the dashboard cards
-        $stats = [
-            'pending'  => Booking::where('status', 'pending')->count(),
-            'approved' => Booking::where('status', 'approved')->count(),
-            'denied'   => Booking::where('status', 'denied')->count(),
-            'payments' => (float) Payment::sum('amount'),
-        ];
-
-        // Fetch payments separately for the payments table/tab
-        $payments = Payment::with('booking.client')->latest()->get();
-
-        return view('Management.ManagementDashboard', compact('bookings', 'payments', 'stats'));
+    if (!empty($status)) {
+        $query->where('status', $status);
     }
+
+    $bookings = $query->get();
+
+    // Calculate statistics for the dashboard cards
+    $stats = [
+        'pending'  => Booking::where('status', 'pending')->count(),
+        'approved' => Booking::where('status', 'approved')->count(),
+        'denied'   => Booking::where('status', 'denied')->count(),
+        'payments' => (float) Payment::sum('amount'),
+    ];
+
+    // Fetch payments separately for the payments table/tab
+    $payments = Payment::with('booking.client')->latest()->get();
+
+    return view('Management.ManagementDashboard', compact('bookings', 'payments', 'stats'));
+}
 
     /**
      * Approve a booking and notify the client.
