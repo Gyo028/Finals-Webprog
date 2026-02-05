@@ -5,37 +5,95 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Booking;
 use App\Models\Payment;
+use App\Mail\MyEmail;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 
 class ManagementController extends Controller
 {
-    public function dashboard()
+    /**
+     * Display the management dashboard with eager-loaded bookings and stats.
+     */
+    public function dashboard(Request $request)
     {
-        $bookings = Booking::latest()->get();
-        $payments = Payment::latest()->get();
+        $status = $request->query('status');
 
+        // Eager load all relationships to ensure Blade data-attributes have values.
+        // This prevents the "N/A" issue in your modal.
+        $query = Booking::with(['client', 'venue', 'event', 'pax', 'payments'])
+                        ->latest();
+
+        if (!empty($status)) {
+            $query->where('status', $status);
+        }
+
+        $bookings = $query->get();
+
+        // Calculate statistics for the dashboard cards
         $stats = [
             'pending'  => Booking::where('status', 'pending')->count(),
             'approved' => Booking::where('status', 'approved')->count(),
-            'rejected' => Booking::where('status', 'rejected')->count(),
+            'denied'   => Booking::where('status', 'denied')->count(),
             'payments' => (float) Payment::sum('amount'),
         ];
+
+        // Fetch payments separately for the payments table/tab
+        $payments = Payment::with('booking.client')->latest()->get();
 
         return view('Management.ManagementDashboard', compact('bookings', 'payments', 'stats'));
     }
 
-    public function approve($id)
+    /**
+     * Approve a booking and notify the client.
+     */
+    public function approve(Request $request, $id)
     {
-        $booking = Booking::findOrFail($id);
-        $booking->update(['status' => 'approved']);
+        // Load the booking with the user relationship to get the email address
+        $booking = Booking::with('client.user')->findOrFail($id);
+        
+        $booking->update([
+            'status' => 'approved',
+            'verification_remarks' => $request->admin_notes,
+            'updated_at' => now()
+        ]);
 
-        return back()->with('success', 'Booking approved!');
+        // Send Approval Email
+        if ($booking->client && $booking->client->user && $booking->client->user->email) {
+            Mail::to($booking->client->user->email)->send(new MyEmail([
+                'clientName' => $booking->client->first_name . ' ' . $booking->client->last_name,
+                'status'     => 'approved',
+                'remarks'    => $request->admin_notes,
+                'bookingId'  => $id
+            ]));
+        }
+
+        return back()->with('success', "Booking #{$id} has been approved and the client has been notified.");
     }
 
-    public function reject($id)
+    /**
+     * Reject a booking and notify the client with a reason.
+     */
+    public function reject(Request $request, $id)
     {
-        $booking = Booking::findOrFail($id);
-        $booking->update(['status' => 'denied']);
+        $booking = Booking::with('client.user')->findOrFail($id);
+        $reason = $request->reason; // Captured from the rejection form/modal
 
-        return back()->with('success', 'Booking rejected!');
+        $booking->update([
+            'status' => 'denied',
+            'verification_remarks' => $reason,
+            'updated_at' => now()
+        ]);
+
+        // Send Rejection Email
+        if ($booking->client && $booking->client->user && $booking->client->user->email) {
+            Mail::to($booking->client->user->email)->send(new MyEmail([
+                'clientName' => $booking->client->first_name . ' ' . $booking->client->last_name,
+                'status'     => 'denied',
+                'remarks'    => $reason,
+                'bookingId'  => $id
+            ]));
+        }
+
+        return back()->with('success', "Booking #{$id} has been denied.");
     }
 }

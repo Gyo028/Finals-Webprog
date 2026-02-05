@@ -91,15 +91,22 @@
                                 <button
                                     class="mgmt-btn"
                                     onclick="openBookingModal(this)"
-                                    data-id="{{ $bid }}"
-                                    data-status="{{ $booking->status }}"
-                                    data-client="{{ $booking->first_name }} {{ $booking->last_name }}"
-                                    data-event="{{ $booking->event_name ?? 'N/A' }}"
-                                    data-date="{{ $booking->booking_date ?? 'N/A' }}"
-                                    data-venue="{{ $booking->venue_name ?? 'N/A' }}"
-                                    data-time="{{ ($booking->booking_start_time ?? '') . (!empty($booking->booking_end_time) ? ' – ' . $booking->booking_end_time : '') }}"
-                                    data-pax="{{ $booking->pax ?? 'N/A' }}"
-                                    data-receipt="{{ $booking->receipt_path ?? '' }}"
+                                    data-id="{{ $booking->booking_id }}"
+                                    {{-- FIX: Access client name through the relationship --}}
+                                    data-client="{{ $booking->client->first_name ?? 'N/A' }} {{ $booking->client->last_name ?? '' }}"
+                                    {{-- Relationship access --}}
+                                    data-event="{{ $booking->event->event_name ?? 'N/A' }}"
+                                    {{-- FIX: Check both common pax column names just in case --}}
+                                    data-pax="{{ $booking->pax->pax_description ?? ($booking->pax->pax_count ?? 'N/A') }}"
+                                    data-venue="{{ $booking->venue->venue_name ?? 'N/A' }}"
+                                    data-address="{{ $booking->venue->venue_address ?? '' }}"
+                                    {{-- Carbon formatting is now safe because $booking is an Eloquent Model --}}
+                                    data-date="{{ $booking->booking_date ? $booking->booking_date->format('Y-m-d') : '' }}"
+                                    data-start-time="{{ $booking->booking_start_time }}"
+                                    data-end-time="{{ $booking->booking_end_time }}"
+                                    {{-- Accessing the receipt from the payments collection --}}
+                                    data-receipt="{{ $booking->payments->first()->receipt_path ?? '' }}"
+                                    data-remarks="{{ $booking->verification_remarks ?? '' }}"
                                 >
                                     View
                                 </button>
@@ -155,91 +162,112 @@
 </div>
 
 {{-- ✅ INJECT THE SEGREGATED MODAL PARTIAL --}}
-@include('management.partials.booking-modal')
-
-{{-- ✅ JAVASCRIPT LOGIC --}}
-{{-- resources/views/management/dashboard.blade.php --}}
-
-{{-- ... existing stats and table code ... --}}
 
 @include('management.partials.booking-modal')
 
 {{-- ✅ UPDATED JAVASCRIPT LOGIC --}}
 <script>
-// Helper for 12h format
+/**
+ * Helper to convert 24h format (e.g., 09:30:00) to 12h format (e.g., 09:30 AM)
+ */
 function formatTo12Hour(timeStr) {
-    if (!timeStr || timeStr === 'N/A') return 'N/A';
+    if (!timeStr || timeStr === 'N/A' || timeStr === 'null') return 'N/A';
+    
+    // Split by colon to handle HH:MM:SS format
     const parts = timeStr.trim().split(':');
     let hours = parseInt(parts[0]);
-    let minutes = parts[1] ? parts[1].substring(0, 2) : '00';
-    const ampm = hours >= 12 ? 'pm' : 'am';
+    let minutes = parts[1] || '00';
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    
     hours = hours % 12 || 12;
+    // Return formatted string with leading zero for hours if needed
     return `${hours < 10 ? '0'+hours : hours}:${minutes} ${ampm}`;
 }
 
 /**
- * Syncs the text from the central textarea into the hidden input of the 
- * form being submitted.
+ * Syncs the textarea value to the hidden inputs in the forms
  */
 function syncNotes(formId) {
     const notes = document.getElementById('m_admin_notes').value;
     const form = document.getElementById(formId);
     
-    // If rejecting, you might want to require a reason
+    // Safety check: Don't allow rejection without a reason
     if(formId === 'rejectForm' && notes.trim() === "") {
-        event.preventDefault();
+        window.event.preventDefault(); // Stop form submission
         alert("Please provide a reason for rejection in the notes area.");
         return;
     }
     
-    form.querySelector('.hidden-notes').value = notes;
+    const hiddenInput = form.querySelector('.hidden-notes');
+    if (hiddenInput) {
+        hiddenInput.value = notes;
+    }
 }
 
 function openBookingModal(btn) {
-    // Populate Details
-    document.getElementById('m_client').textContent = btn.dataset.client;
-    document.getElementById('m_event').textContent  = btn.dataset.event;
-    document.getElementById('m_venue').textContent  = btn.dataset.venue || 'N/A';
-    document.getElementById('m_pax').textContent    = btn.dataset.pax;
+    const ds = btn.dataset; 
+    
+    // DEBUG: If things still don't show, press F12 and look at the Console
+    console.log("Captured Data:", ds);
 
-    // Date formatting
-    const rawDate = btn.dataset.date;
-    if (rawDate) {
-        const d = new Date(rawDate);
+    // 1. Populate Basic Details
+    document.getElementById('m_client').textContent = ds.client || 'N/A';
+    document.getElementById('m_event').textContent  = ds.event || 'N/A';
+    document.getElementById('m_pax').textContent    = ds.pax || 'N/A';
+    
+    // 2. Venue & Address
+    // Note: Ensure your HTML has an element with id="m_address"
+    document.getElementById('m_venue').textContent   = ds.venue || 'N/A';
+    const addressElem = document.getElementById('m_address');
+    if (addressElem) {
+        addressElem.textContent = ds.address ? ` — ${ds.address}` : ' — No Address';
+    }
+
+    // 3. Date Formatting
+    const dateElem = document.getElementById('m_date');
+    if (ds.date && ds.date !== 'N/A') {
+        const d = new Date(ds.date);
+        // Formats to "April-11-2025"
         const month = d.toLocaleString('en-US', { month: 'long' });
-        document.getElementById('m_date').textContent = `${month}-${d.getDate()}-${d.getFullYear()}`;
-    }
-
-    // Time formatting
-    const rawTime = btn.dataset.time;
-    if (rawTime && rawTime.includes('-')) {
-        const t = rawTime.split(/[–-]/);
-        document.getElementById('m_time').textContent = `${formatTo12Hour(t[0])} - ${formatTo12Hour(t[1])}`;
+        dateElem.textContent = `${month}-${d.getDate()}-${d.getFullYear()}`;
     } else {
-        document.getElementById('m_time').textContent = formatTo12Hour(rawTime);
+        dateElem.textContent = 'N/A';
     }
 
-    // Receipt Image
-    const receipt = btn.dataset.receipt;
+    // 4. Time Formatting
+    // JS converts data-start-time to ds.startTime and data-end-time to ds.endTime
+    const startTime = formatTo12Hour(ds.startTime);
+    const endTime = formatTo12Hour(ds.endTime);
+    document.getElementById('m_time').textContent = (startTime !== 'N/A') ? `${startTime} - ${endTime}` : 'N/A';
+
+    // 5. Receipt Image Handling
     const img = document.getElementById('m_receipt_img');
     const noRec = document.getElementById('m_no_receipt');
-    if (receipt && receipt !== "null") {
-        img.src = '/' + receipt; img.style.display = 'block'; noRec.style.display = 'none';
+    
+    // Ensure we don't try to load a literal "null" string as an image path
+    if (ds.receipt && ds.receipt !== "null" && ds.receipt.trim() !== "") {
+        img.src = ds.receipt.startsWith('http') ? ds.receipt : '/' + ds.receipt; 
+        img.style.display = 'block'; 
+        noRec.style.display = 'none';
     } else {
-        img.src = ""; img.style.display = 'none'; noRec.style.display = 'block';
+        img.src = ""; 
+        img.style.display = 'none'; 
+        noRec.style.display = 'flex';
     }
 
-    // Reset the Textarea
-    document.getElementById('m_admin_notes').value = "";
+    // 6. Remarks & Form Actions
+    // Maps to 'verification_remarks' from your database
+    document.getElementById('m_admin_notes').value = (ds.remarks && ds.remarks !== "null") ? ds.remarks : ""; 
+    
+    const id = ds.id;
+    if (id) {
+        document.getElementById('approveForm').action = `/management/approve/${id}`;
+        document.getElementById('rejectForm').action  = `/management/deny/${id}`;
+    }
 
-    // Set Form Actions
-    const id = btn.dataset.id;
-    document.getElementById('approveForm').action = `/management/approve/${id}`;
-    document.getElementById('rejectForm').action  = `/management/deny/${id}`;
-
+    // 7. Show Modal
     document.getElementById('bookingModal').style.display = 'flex';
 }
-
 function closeBookingModal() {
     document.getElementById('bookingModal').style.display = 'none';
 }

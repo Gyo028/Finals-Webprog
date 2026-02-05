@@ -27,9 +27,11 @@
                     </div>
                 </div>
 
+                {{-- UPDATED VENUE SECTION --}}
                 <div class="detail-item">
-                    <span class="detail-label">📍 Venue</span>
-                    <span id="m_venue" class="detail-value"></span>
+                    <span class="detail-label">📍 Venue & Address</span>
+                    <span id="m_venue" class="detail-value" style="color: #0f172a; font-weight: 700;"></span>
+                    <span id="m_address" class="detail-address"></span>
                 </div>
 
                 <div class="detail-row">
@@ -85,6 +87,17 @@
 </div>
 
 <style>
+/* ... (All your previous styles remain exactly the same) ... */
+
+/* ADD THIS NEW STYLE FOR THE ADDRESS LINE */
+.detail-address {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 2px;
+    font-weight: 400;
+    line-height: 1.4;
+}
+
 /* Base Styles & Typography */
 .mgmt-modal-content { 
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
