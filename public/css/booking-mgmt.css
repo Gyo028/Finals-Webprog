@@ -159,3 +159,25 @@
 }
 
 .close-lightbox:hover { color: white; }
+
+/* Payment Highlight Styling */
+.highlight-payment {
+    background: #f0fdf4 !important; /* Soft Green */
+    border-color: #bbf7d0 !important;
+}
+
+.highlight-payment .detail-label {
+    color: #15803d; /* Forest Green Label */
+}
+
+.highlight-payment .detail-value {
+    color: #166534; /* Dark Green Text */
+    font-size: 18px;
+    font-weight: 800;
+}
+
+/* Ensure the top row fits both Client and Payment */
+.detail-row .highlight-client, 
+.detail-row .highlight-payment {
+    flex: 1;
+}

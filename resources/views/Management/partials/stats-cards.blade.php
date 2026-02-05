@@ -1,0 +1,25 @@
+<div class="mgmt-cards">
+    <div class="mgmt-card">
+        <div class="mgmt-card-title">Pending</div>
+        <div class="mgmt-card-value">{{ $stats['pending'] ?? 0 }}</div>
+    </div>
+
+    <div class="mgmt-card">
+        <div class="mgmt-card-title">Approved</div>
+        <div class="mgmt-card-value">{{ $stats['approved'] ?? 0 }}</div>
+    </div>
+
+    <div class="mgmt-card">
+        <div class="mgmt-card-title">Rejected</div>
+        <div class="mgmt-card-value">
+            {{ $stats['Rejected'] ?? ($stats['rejected'] ?? 0) }}
+        </div>
+    </div>
+
+    <div class="mgmt-card">
+        <div class="mgmt-card-title">Total Payments</div>
+        <div class="mgmt-card-value">
+            ₱{{ number_format($stats['payments'] ?? 0, 2) }}
+        </div>
+    </div>
+</div>

@@ -5,95 +5,116 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Booking;
 use App\Models\Payment;
+use App\Models\Manager;
 use App\Mail\MyEmail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class ManagementController extends Controller
 {
-    /**
-     * Display the management dashboard with eager-loaded bookings and stats.
-     */
-public function dashboard(Request $request)
-{
-    $status = $request->query('status');
+    public function dashboard(Request $request)
+    {
+        $status = $request->query('status');
 
-    // Added 'services' to the eager-loading array
-    // This allows the Blade button to access the many-to-many relationship
-    $query = Booking::with(['client', 'venue', 'event', 'pax', 'payments', 'services'])
-                    ->latest();
+        $query = Booking::with(['client.user', 'venue', 'event', 'pax', 'payments', 'services'])
+                        ->latest();
 
-    if (!empty($status)) {
-        $query->where('status', $status);
+        if (!empty($status)) {
+            $query->where('status', $status);
+        }
+
+        $bookings = $query->get();
+
+        $stats = [
+            'pending'  => Booking::where('status', Booking::STATUS_PENDING)->count(),
+            'approved' => Booking::where('status', Booking::STATUS_APPROVED)->count(),
+            'denied'   => Booking::where('status', Booking::STATUS_DENIED)->count(),
+            'payments' => (float) Payment::sum('amount'),
+        ];
+
+        $payments = Payment::with('booking.client')->latest()->get();
+
+        return view('Management.ManagementDashboard', compact('bookings', 'payments', 'stats'));
     }
 
-    $bookings = $query->get();
+public function approve(Request $request, $id)
+{
+    $manager = Manager::where('user_id', Auth::id())->first();
 
-    // Calculate statistics for the dashboard cards
-    $stats = [
-        'pending'  => Booking::where('status', 'pending')->count(),
-        'approved' => Booking::where('status', 'approved')->count(),
-        'denied'   => Booking::where('status', 'denied')->count(),
-        'payments' => (float) Payment::sum('amount'),
-    ];
+    if (!$manager) {
+        return redirect()->route('management.dashboard')->with('error', 'Manager profile not found.');
+    }
 
-    // Fetch payments separately for the payments table/tab
-    $payments = Payment::with('booking.client')->latest()->get();
-
-    return view('Management.ManagementDashboard', compact('bookings', 'payments', 'stats'));
-}
-
-    /**
-     * Approve a booking and notify the client.
-     */
-    public function approve(Request $request, $id)
-    {
-        // Load the booking with the user relationship to get the email address
-        $booking = Booking::with('client.user')->findOrFail($id);
+    // Process the data inside the transaction
+    DB::transaction(function () use ($request, $id, $manager) {
+        $booking = Booking::findOrFail($id);
         
         $booking->update([
-            'status' => 'approved',
-            'verification_remarks' => $request->admin_notes,
-            'updated_at' => now()
+            'status'                 => Booking::STATUS_APPROVED,
+            'verification_remarks'   => $request->admin_notes,
+            'verified_by_manager_id' => $manager->manager_id,
+            'verified_at'            => now(),
+            'is_payment_verified'    => true,
+            'is_details_verified'    => true,
         ]);
 
-        // Send Approval Email
-        if ($booking->client && $booking->client->user && $booking->client->user->email) {
-            Mail::to($booking->client->user->email)->send(new MyEmail([
-                'clientName' => $booking->client->first_name . ' ' . $booking->client->last_name,
-                'status'     => 'approved',
-                'remarks'    => $request->admin_notes,
-                'bookingId'  => $id
-            ]));
+        // Email logic
+        try {
+            if ($booking->client?->user?->email) {
+                Mail::to($booking->client->user->email)->send(new MyEmail([
+                    'clientName' => $booking->client->first_name . ' ' . $booking->client->last_name,
+                    'status'     => 'approved',
+                    'remarks'    => $request->admin_notes,
+                    'bookingId'  => $id
+                ]));
+            }
+        } catch (\Exception $e) {
+            // Log it, but don't stop the process
+            \Log::error("Email failed for booking $id: " . $e->getMessage());
         }
+    });
 
-        return back()->with('success', "Booking #{$id} has been approved and the client has been notified.");
+    // CRITICAL: Return the redirect OUTSIDE the transaction block
+    // This forces a full clean reload of the dashboard
+    return redirect()->route('management.dashboard')->with('success', "Booking #{$id} approved.");
+}
+
+public function reject(Request $request, $id)
+{
+    $manager = Manager::where('user_id', Auth::id())->first();
+
+    if (!$manager) {
+        return redirect()->route('management.dashboard')->with('error', 'Manager profile not found.');
     }
 
-    /**
-     * Reject a booking and notify the client with a reason.
-     */
-    public function reject(Request $request, $id)
-    {
-        $booking = Booking::with('client.user')->findOrFail($id);
-        $reason = $request->reason; // Captured from the rejection form/modal
-
+    DB::transaction(function () use ($request, $id, $manager) {
+        $booking = Booking::findOrFail($id);
+        
         $booking->update([
-            'status' => 'denied',
-            'verification_remarks' => $reason,
-            'updated_at' => now()
+            'status'                 => Booking::STATUS_DENIED,
+            'verification_remarks'   => $request->reason, // SyncNotes uses 'reason' for reject
+            'verified_by_manager_id' => $manager->manager_id,
+            'verified_at'            => now(),
+            'is_payment_verified'    => false,
+            'is_details_verified'    => false,
         ]);
 
-        // Send Rejection Email
-        if ($booking->client && $booking->client->user && $booking->client->user->email) {
-            Mail::to($booking->client->user->email)->send(new MyEmail([
-                'clientName' => $booking->client->first_name . ' ' . $booking->client->last_name,
-                'status'     => 'denied',
-                'remarks'    => $reason,
-                'bookingId'  => $id
-            ]));
+        try {
+            if ($booking->client?->user?->email) {
+                Mail::to($booking->client->user->email)->send(new MyEmail([
+                    'clientName' => $booking->client->first_name . ' ' . $booking->client->last_name,
+                    'status'     => 'denied',
+                    'remarks'    => $request->reason,
+                    'bookingId'  => $id
+                ]));
+            }
+        } catch (\Exception $e) {
+             \Log::error("Email failed for rejection $id: " . $e->getMessage());
         }
+    });
 
-        return back()->with('success', "Booking #{$id} has been denied.");
-    }
+    return redirect()->route('management.dashboard')->with('success', "Booking #{$id} denied.");
+}
 }

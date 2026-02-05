@@ -1,45 +1,17 @@
+<link rel="stylesheet" href="{{ asset('css/management.css') }}">
+
+
 <div class="mgmt-wrap">
 
     {{-- ✅ EXTRA HEADER ACTION (LOGOUT) --}}
-    <div class="mgmt-top-actions">
-        <form action="{{ route('logout') }}" method="POST">
-            @csrf
-            <button type="submit" class="mgmt-logout-btn">LOG OUT</button>
-        </form>
-    </div>
+    @include('management.partials.top-actions')
 
-    <div class="mgmt-hero">
-        <div>
-            <h1>Management Dashboard</h1>
-            <p>Manage bookings, approvals, and payments.</p>
-        </div>
-    </div>
+    @include('management.partials.hero')
 
-    @if(session('success'))
-        <div class="mgmt-alert">
-            ✅ {{ session('success') }}
-        </div>
-    @endif
+    @include('management.partials.alerts')
 
     {{-- ✅ STATS CARDS --}}
-    <div class="mgmt-cards">
-        <div class="mgmt-card">
-            <div class="mgmt-card-title">Pending</div>
-            <div class="mgmt-card-value">{{ $stats['pending'] ?? 0 }}</div>
-        </div>
-        <div class="mgmt-card">
-            <div class="mgmt-card-title">Approved</div>
-            <div class="mgmt-card-value">{{ $stats['approved'] ?? 0 }}</div>
-        </div>
-        <div class="mgmt-card">
-            <div class="mgmt-card-title">Rejected</div>
-            <div class="mgmt-card-value">{{ $stats['Rejected'] ?? ($stats['rejected'] ?? 0) }}</div>
-        </div>
-        <div class="mgmt-card">
-            <div class="mgmt-card-title">Total Payments</div>
-            <div class="mgmt-card-value">₱{{ number_format($stats['payments'] ?? 0, 2) }}</div>
-        </div>
-    </div>
+    @include('management.partials.stats-cards', ['stats' => $stats])
 
     {{-- ✅ BOOKINGS SECTION --}}
     <div class="mgmt-section">
@@ -97,13 +69,14 @@
                                     data-pax="{{ $booking->pax->pax_description ?? ($booking->pax->pax_count ?? 'N/A') }}"
                                     data-venue="{{ $booking->venue->venue_name ?? 'N/A' }}"
                                     data-address="{{ $booking->venue->venue_address ?? '' }}"
-                                    {{-- NEW: Converts multiple services into a comma-separated string --}}
                                     data-services="{{ $booking->services->pluck('service_name')->implode(', ') ?: 'None' }}"
                                     data-date="{{ $booking->booking_date ? $booking->booking_date->format('Y-m-d') : '' }}"
                                     data-start-time="{{ $booking->booking_start_time }}"
                                     data-end-time="{{ $booking->booking_end_time }}"
                                     data-receipt="{{ $booking->payments->first()->receipt_path ?? '' }}"
                                     data-remarks="{{ $booking->verification_remarks ?? '' }}"
+                                    {{-- NEW: Fetch the total from the booking model --}}
+                                    data-total="₱{{ number_format($booking->total_price, 2) }}"
                                 >
                                     View
                                 </button>
@@ -120,43 +93,9 @@
     </div>
 
     {{-- ✅ PAYMENTS SECTION --}}
-    <div class="mgmt-section">
-        <div class="mgmt-section-head">
-            <h2>Payments</h2>
-        </div>
-
-        <div class="mgmt-table-wrap">
-            <table class="mgmt-table">
-                <thead>
-                    <tr>
-                        <th>Client</th>
-                        <th>Booking ID</th>
-                        <th>Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($payments as $payment)
-                        <tr>
-                            <td>
-                                <strong>
-                                    {{ $payment->first_name ?? 'Unknown' }}
-                                    {{ $payment->last_name ?? '' }}
-                                </strong>
-                            </td>
-                            <td>#{{ $payment->booking_id }}</td>
-                            <td>₱{{ number_format($payment->amount ?? 0, 2) }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="3" class="mgmt-empty">No payments found</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-</div>
+    @include('management.partials.payments-section', [
+        'payments' => $payments
+    ])
 
 {{-- ✅ INJECT THE SEGREGATED MODAL PARTIAL --}}
 
@@ -165,7 +104,7 @@
 {{-- ✅ UPDATED JAVASCRIPT LOGIC --}}
 <script>
 /**
- * Helper to convert 24h format (e.g., 09:30:00) to 12h format (e.g., 09:30 AM)
+ * Helper to convert 24h format (e.g., 13:19:00) to 12h format (e.g., 01:19 PM)
  */
 function formatTo12Hour(timeStr) {
     if (!timeStr || timeStr === 'N/A' || timeStr === 'null') return 'N/A';
@@ -177,12 +116,13 @@ function formatTo12Hour(timeStr) {
     const ampm = hours >= 12 ? 'PM' : 'AM';
     
     hours = hours % 12 || 12;
-    // Return formatted string with leading zero for hours if needed
+    // Return formatted string with leading zero for hours if needed (e.g., 01:19 PM)
     return `${hours < 10 ? '0'+hours : hours}:${minutes} ${ampm}`;
 }
 
 /**
- * Syncs the textarea value to the hidden inputs in the forms
+ * Syncs the textarea (m_admin_notes) value to the hidden inputs 
+ * in either the approve or reject form before submission.
  */
 function syncNotes(formId) {
     const notes = document.getElementById('m_admin_notes').value;
@@ -190,21 +130,26 @@ function syncNotes(formId) {
     
     // Safety check: Don't allow rejection without a reason
     if(formId === 'rejectForm' && notes.trim() === "") {
-        window.event.preventDefault(); // Stop form submission
         alert("Please provide a reason for rejection in the notes area.");
-        return;
+        return false; // Blocks form submission
     }
     
     const hiddenInput = form.querySelector('.hidden-notes');
     if (hiddenInput) {
         hiddenInput.value = notes;
+        console.log("Synced notes to " + formId + ":", hiddenInput.value);
     }
+
+    return true; // Allows the form to submit
 }
 
+/**
+ * Main function to open the modal and populate it with data from the button's dataset
+ */
 function openBookingModal(btn) {
     const ds = btn.dataset; 
     
-    // DEBUG: If things still don't show, press F12 and look at the Console
+    // DEBUG: View captured data in the browser console (F12)
     console.log("Captured Data:", ds);
 
     // 1. Populate Basic Details
@@ -212,41 +157,58 @@ function openBookingModal(btn) {
     document.getElementById('m_event').textContent  = ds.event || 'N/A';
     document.getElementById('m_pax').textContent    = ds.pax || 'N/A';
     
-    // NEW: Populate Services
-    // Ensure you have an element with id="m_services" in your modal HTML
+    // 2. Populate Total Payment
+    const totalElem = document.getElementById('m_total');
+    if (totalElem) {
+        // Correctly pulls 'data-total' from the Blade button
+        totalElem.textContent = ds.total || '₱0.00';
+    }
+
+    // 3. Populate Services
     const servicesElem = document.getElementById('m_services');
     if (servicesElem) {
         servicesElem.textContent = (ds.services && ds.services !== "null") ? ds.services : 'None Selected';
     }
 
-    // 2. Venue & Address
+    // 4. Venue & Address
     document.getElementById('m_venue').textContent   = ds.venue || 'N/A';
     const addressElem = document.getElementById('m_address');
     if (addressElem) {
         addressElem.textContent = ds.address ? ` — ${ds.address}` : ' — No Address';
     }
 
-    // 3. Date Formatting
+    // 5. Date Formatting (Displays as: Month Day, Year)
     const dateElem = document.getElementById('m_date');
     if (ds.date && ds.date !== 'N/A') {
         const d = new Date(ds.date);
         const month = d.toLocaleString('en-US', { month: 'long' });
-        dateElem.textContent = `${month}-${d.getDate()}-${d.getFullYear()}`;
+        dateElem.textContent = `${month} ${d.getDate()}, ${d.getFullYear()}`;
     } else {
         dateElem.textContent = 'N/A';
     }
 
-    // 4. Time Formatting
+    // 6. Time Formatting
     const startTime = formatTo12Hour(ds.startTime);
     const endTime = formatTo12Hour(ds.endTime);
     document.getElementById('m_time').textContent = (startTime !== 'N/A') ? `${startTime} - ${endTime}` : 'N/A';
 
-    // 5. Receipt Image Handling
+    // 7. Receipt Image Handling (Maps to public/uploads/receipts/)
     const img = document.getElementById('m_receipt_img');
     const noRec = document.getElementById('m_no_receipt');
-    
+
     if (ds.receipt && ds.receipt !== "null" && ds.receipt.trim() !== "") {
-        img.src = ds.receipt.startsWith('http') ? ds.receipt : '/' + ds.receipt; 
+        let fileName = ds.receipt;
+        let finalPath = '';
+
+        if (fileName.startsWith('http')) {
+            finalPath = fileName;
+        } else {
+            // Clean filename to prevent double pathing if DB already contains 'uploads/receipts/'
+            let cleanFileName = fileName.replace('uploads/receipts/', '');
+            finalPath = `/uploads/receipts/${cleanFileName}`;
+        }
+
+        img.src = finalPath; 
         img.style.display = 'block'; 
         noRec.style.display = 'none';
     } else {
@@ -255,18 +217,24 @@ function openBookingModal(btn) {
         noRec.style.display = 'flex';
     }
 
-    // 6. Remarks & Form Actions
+    // 8. Remarks & Form Actions
+    // Populates textarea with existing verification_remarks if any
     document.getElementById('m_admin_notes').value = (ds.remarks && ds.remarks !== "null") ? ds.remarks : ""; 
     
     const id = ds.id;
     if (id) {
+        // Sets dynamic action URLs for the Approval and Rejection forms
         document.getElementById('approveForm').action = `/management/approve/${id}`;
         document.getElementById('rejectForm').action  = `/management/deny/${id}`;
     }
 
-    // 7. Show Modal
+    // 9. Display the Modal
     document.getElementById('bookingModal').style.display = 'flex';
 }
+
+/**
+ * Standard Modal and Lightbox Controls
+ */
 function closeBookingModal() {
     document.getElementById('bookingModal').style.display = 'none';
 }
@@ -274,181 +242,14 @@ function closeBookingModal() {
 function openLightbox(src) {
     const lightbox = document.getElementById('receiptLightbox');
     const lightboxImg = document.getElementById('lightboxImg');
-    
-    // Set the source
     lightboxImg.src = src;
-    
-    // Show the overlay
     lightbox.style.display = 'flex';
-    
-    // Lock background scroll
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden'; // Prevents background scrolling
 }
 
 function closeLightbox() {
     document.getElementById('receiptLightbox').style.display = 'none';
-    document.body.style.overflow = 'auto'; // Re-enable scrolling
+    document.body.style.overflow = 'auto'; // Restores background scrolling
 }
 </script>
 
-{{-- ✅ MAIN DASHBOARD STYLES --}}
-<style>
-    .mgmt-wrap{
-        max-width: 1100px;
-        margin: 30px auto 60px;
-        padding: 0 18px;
-        font-family: Arial, sans-serif;
-    }
-
-    .mgmt-top-actions{
-        display:flex;
-        justify-content:flex-end;
-        margin: 10px 0 14px;
-    }
-
-    .mgmt-logout-btn{
-        background:#000;
-        color:#fff;
-        border:none;
-        padding:10px 18px;
-        border-radius:10px;
-        cursor:pointer;
-        font-weight:800;
-        letter-spacing:.4px;
-    }
-    .mgmt-logout-btn:hover{ opacity:.9; }
-
-    .mgmt-hero{
-        background: #111;
-        color: #fff;
-        border-radius: 14px;
-        padding: 26px 24px;
-        margin-bottom: 18px;
-    }
-    .mgmt-hero h1{
-        margin: 0 0 6px 0;
-        font-size: 26px;
-    }
-    .mgmt-hero p{
-        margin: 0;
-        opacity: .85;
-    }
-
-    .mgmt-alert{
-        background: #d4edda;
-        border: 1px solid #b7e1c1;
-        padding: 10px 12px;
-        border-radius: 10px;
-        margin: 12px 0 18px;
-        color: #155724;
-        font-weight: 600;
-    }
-
-    .mgmt-cards{
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 14px;
-        margin-bottom: 20px;
-    }
-    .mgmt-card{
-        background: #fff;
-        border-radius: 12px;
-        padding: 16px 16px;
-        box-shadow: 0 10px 26px rgba(0,0,0,.08);
-        border: 1px solid #eee;
-    }
-    .mgmt-card-title{
-        color: #666;
-        font-size: 13px;
-        margin-bottom: 8px;
-        font-weight: 700;
-        letter-spacing: .2px;
-    }
-    .mgmt-card-value{
-        font-size: 24px;
-        font-weight: 800;
-        color: #111;
-    }
-
-    .mgmt-section{
-        background: #fff;
-        border-radius: 12px;
-        padding: 16px;
-        box-shadow: 0 10px 26px rgba(0,0,0,.08);
-        border: 1px solid #eee;
-        margin-top: 16px;
-    }
-    .mgmt-section-head{
-        display:flex;
-        align-items:center;
-        justify-content: space-between;
-        margin-bottom: 12px;
-        gap: 12px;
-    }
-    .mgmt-section h2{
-        margin: 0;
-        font-size: 18px;
-    }
-
-    .mgmt-table-wrap{ overflow-x:auto; }
-
-    .mgmt-table{
-        width: 100%;
-        border-collapse: collapse;
-    }
-    .mgmt-table th, .mgmt-table td{
-        border-bottom: 1px solid #eee;
-        padding: 12px 10px;
-        text-align: left;
-        vertical-align: middle;
-        font-size: 14px;
-    }
-    .mgmt-table th{
-        background: #fafafa;
-        font-weight: 800;
-        color:#222;
-    }
-
-    .mgmt-badge{
-        display: inline-block;
-        padding: 6px 10px;
-        border-radius: 999px;
-        font-weight: 800;
-        font-size: 12px;
-        background: #eee;
-        color: #333;
-        text-transform: capitalize;
-    }
-    .mgmt-badge.pending{ background:#fff3cd; color:#856404; }
-    .mgmt-badge.approved{ background:#d4edda; color:#155724; }
-    .mgmt-badge.denied{ background:#f8d7da; color:#721c24; }
-
-    .mgmt-btn{
-        border: none;
-        padding: 8px 12px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 800;
-        font-size: 13px;
-        margin-right: 8px;
-    }
-    .mgmt-approve{ background:#2ecc71; color:#fff; }
-    .mgmt-reject{ background:#e74c3c; color:#fff; }
-    .mgmt-btn:hover{ opacity:.9; }
-
-    .mgmt-empty{
-        text-align:center;
-        color:#888;
-        padding: 16px 10px;
-    }
-
-    .mgmt-filter{
-        padding: 8px 12px;
-        border-radius: 10px;
-        border: 1px solid #ddd;
-        font-weight: 700;
-        outline: none;
-        cursor: pointer;
-        background: #fff;
-    }
-</style>

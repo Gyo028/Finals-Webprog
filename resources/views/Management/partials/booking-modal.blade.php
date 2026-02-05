@@ -11,9 +11,16 @@
 
         <div class="mgmt-modal-flex">
             <div class="mgmt-modal-column">
-                <div class="detail-item highlight-client">
-                    <span class="detail-label">👤 Client</span>
-                    <span id="m_client" class="detail-value"></span>
+                {{-- Client & Total Row --}}
+                <div class="detail-row">
+                    <div class="detail-item highlight-client">
+                        <span class="detail-label">👤 Client</span>
+                        <span id="m_client" class="detail-value"></span>
+                    </div>
+                    <div class="detail-item highlight-payment">
+                        <span class="detail-label">💰 Total Amount</span>
+                        <span id="m_total" class="detail-value"></span>
+                    </div>
                 </div>
 
                 <div class="detail-row">
@@ -76,14 +83,17 @@
         </div>
         <br>
 
+        {{-- ACTION BUTTONS --}}
         <div id="action-buttons" class="mgmt-modal-footer">
-            <form id="approveForm" method="POST" onsubmit="syncNotes('approveForm')" style="margin:0;">
+            {{-- Approve Form --}}
+            <form id="approveForm" method="POST" onsubmit="return syncNotes('approveForm')" style="margin:0;">
                 @csrf
                 <input type="hidden" name="admin_notes" class="hidden-notes">
                 <button type="submit" class="mgmt-btn mgmt-approve">Approve</button>
             </form>
 
-            <form id="rejectForm" method="POST" onsubmit="syncNotes('rejectForm')" style="margin:0;">
+            {{-- Reject Form --}}
+            <form id="rejectForm" method="POST" onsubmit="return syncNotes('rejectForm')" style="margin:0;">
                 @csrf
                 <input type="hidden" name="reason" class="hidden-notes">
                 <button type="submit" class="mgmt-btn mgmt-reject">Reject</button>
