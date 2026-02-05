@@ -270,6 +270,25 @@ function openBookingModal(btn) {
 function closeBookingModal() {
     document.getElementById('bookingModal').style.display = 'none';
 }
+
+function openLightbox(src) {
+    const lightbox = document.getElementById('receiptLightbox');
+    const lightboxImg = document.getElementById('lightboxImg');
+    
+    // Set the source
+    lightboxImg.src = src;
+    
+    // Show the overlay
+    lightbox.style.display = 'flex';
+    
+    // Lock background scroll
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+    document.getElementById('receiptLightbox').style.display = 'none';
+    document.body.style.overflow = 'auto'; // Re-enable scrolling
+}
 </script>
 
 {{-- ✅ MAIN DASHBOARD STYLES --}}
