@@ -14,17 +14,26 @@
     @include('management.partials.stats-cards', ['stats' => $stats])
 
     {{-- ✅ BOOKINGS SECTION --}}
-    <div class="mgmt-section">
         <div class="mgmt-section-head">
             <h2>Bookings</h2>
 
-            <form method="GET" action="{{ route('management.dashboard') }}">
-                <select name="status" onchange="this.form.submit()" class="mgmt-filter">
-                    <option value="" {{ request('status') == '' ? 'selected' : '' }}>All</option>
-                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
-                    <option value="denied" {{ request('status') == 'denied' ? 'selected' : '' }}>Denied</option>
-                </select>
+            <form method="GET" action="{{ route('management.dashboard') }}" id="filterForm">
+                <div class="mgmt-filter-button-group">
+                    {{-- Pending Option --}}
+                    <input type="radio" name="status" id="status_pending" value="pending" 
+                        onchange="this.form.submit()" {{ request('status') == 'pending' ? 'checked' : '' }}>
+                    <label for="status_pending">Pending</label>
+
+                    {{-- Approved Option --}}
+                    <input type="radio" name="status" id="status_approved" value="approved" 
+                        onchange="this.form.submit()" {{ request('status') == 'approved' ? 'checked' : '' }}>
+                    <label for="status_approved">Approved</label>
+
+                    {{-- Denied Option --}}
+                    <input type="radio" name="status" id="status_denied" value="denied" 
+                        onchange="this.form.submit()" {{ request('status') == 'denied' ? 'checked' : '' }}>
+                    <label for="status_denied">Rejected</label>
+                </div>
             </form>
         </div>
 
@@ -33,7 +42,7 @@
                 <thead>
                     <tr>
                         <th>Client</th>
-                        <th>Date & Time</th>
+                        <th>Date Submitted</th>
                         <th>Status</th>
                         <th style="width:220px;">Action</th>
                     </tr>
@@ -42,16 +51,19 @@
                     @forelse($bookings as $booking)
                         @php $bid = $booking->booking_id ?? $booking->id; @endphp
                         <tr>
+                            {{-- Column 1: Client Name --}}
                             <td>
-                                <strong>{{ $booking->first_name }} {{ $booking->last_name }}</strong>
+                                <strong>{{ $booking->client->username ?? $booking->client->first_name . ' ' . $booking->client->last_name }}</strong>
                             </td>
+
+                            {{-- Column 2: Date Created (When they submitted the booking) --}}
                             <td>
-                                {{ $booking->booking_date ?? 'N/A' }}<br>
-                                <small style="color:#666;">
-                                    {{ $booking->booking_start_time ?? '' }}
-                                    @if(!empty($booking->booking_end_time))
-                                        – {{ $booking->booking_end_time }}
-                                    @endif
+                                <span style="font-size: 14px; color: #333; font-weight: 600;">
+                                    {{ $booking->created_at->timezone('Asia/Manila')->format('M d, Y') }}
+                                </span>
+                                <br>
+                                <small style="color: #999; font-size: 11px;">
+                                    {{ $booking->created_at->timezone('Asia/Manila')->format('h:i A') }}
                                 </small>
                             </td>
                             <td>
@@ -81,6 +93,7 @@
                                     View
                                 </button>
                             </td>
+                            </td>
                         </tr>
                     @empty
                         <tr>
@@ -91,11 +104,6 @@
             </table>
         </div>
     </div>
-
-    {{-- ✅ PAYMENTS SECTION --}}
-    @include('management.partials.payments-section', [
-        'payments' => $payments
-    ])
 
 {{-- ✅ INJECT THE SEGREGATED MODAL PARTIAL --}}
 
