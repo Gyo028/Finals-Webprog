@@ -13,98 +13,103 @@
     {{-- ✅ STATS CARDS --}}
     @include('management.partials.stats-cards', ['stats' => $stats])
 
-    {{-- ✅ BOOKINGS SECTION --}}
-        <div class="mgmt-section-head">
-            <h2>Bookings</h2>
+{{-- ✅ BOOKINGS SECTION --}}
+    <div class="mgmt-section-head">
+        <h2>Bookings</h2>
 
-            <form method="GET" action="{{ route('management.dashboard') }}" id="filterForm">
-                <div class="mgmt-filter-button-group">
-                    {{-- Pending Option --}}
-                    <input type="radio" name="status" id="status_pending" value="pending" 
-                        onchange="this.form.submit()" {{ request('status') == 'pending' ? 'checked' : '' }}>
-                    <label for="status_pending">Pending</label>
+        <form method="GET" action="{{ route('management.dashboard') }}" id="filterForm">
+            <div class="mgmt-filter-button-group">
+                {{-- Pending Option --}}
+                <input type="radio" name="status" id="status_pending" value="pending" 
+                    onchange="this.form.submit()" {{ request('status') == 'pending' ? 'checked' : '' }}>
+                <label for="status_pending">Pending</label>
 
-                    {{-- Approved Option --}}
-                    <input type="radio" name="status" id="status_approved" value="approved" 
-                        onchange="this.form.submit()" {{ request('status') == 'approved' ? 'checked' : '' }}>
-                    <label for="status_approved">Approved</label>
+                {{-- Approved Option --}}
+                <input type="radio" name="status" id="status_approved" value="approved" 
+                    onchange="this.form.submit()" {{ request('status') == 'approved' ? 'checked' : '' }}>
+                <label for="status_approved">Approved</label>
 
-                    {{-- Denied Option --}}
-                    <input type="radio" name="status" id="status_denied" value="denied" 
-                        onchange="this.form.submit()" {{ request('status') == 'denied' ? 'checked' : '' }}>
-                    <label for="status_denied">Rejected</label>
-                </div>
-            </form>
-        </div>
-
-        <div class="mgmt-table-wrap">
-            <table class="mgmt-table">
-                <thead>
-                    <tr>
-                        <th>Client</th>
-                        <th>Date Submitted</th>
-                        <th>Status</th>
-                        <th style="width:220px;">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($bookings as $booking)
-                        @php $bid = $booking->booking_id ?? $booking->id; @endphp
-                        <tr>
-                            {{-- Column 1: Client Name --}}
-                            <td>
-                                <strong>{{ $booking->client->username ?? $booking->client->first_name . ' ' . $booking->client->last_name }}</strong>
-                            </td>
-
-                            {{-- Column 2: Date Created (When they submitted the booking) --}}
-                            <td>
-                                <span style="font-size: 14px; color: #333; font-weight: 600;">
-                                    {{ $booking->created_at->timezone('Asia/Manila')->format('M d, Y') }}
-                                </span>
-                                <br>
-                                <small style="color: #999; font-size: 11px;">
-                                    {{ $booking->created_at->timezone('Asia/Manila')->format('h:i A') }}
-                                </small>
-                            </td>
-                            <td>
-                                <span class="mgmt-badge {{ $booking->status }}">
-                                    {{ $booking->status === 'denied' ? 'Rejected' : ucfirst($booking->status) }}
-                                </span>
-                            </td>
-                            <td>
-                                <button
-                                    class="mgmt-btn"
-                                    onclick="openBookingModal(this)"
-                                    data-id="{{ $booking->booking_id }}"
-                                    data-client="{{ $booking->client->first_name ?? 'N/A' }} {{ $booking->client->last_name ?? '' }}"
-                                    data-event="{{ $booking->event->event_name ?? 'N/A' }}"
-                                    data-pax="{{ $booking->pax->pax_description ?? ($booking->pax->pax_count ?? 'N/A') }}"
-                                    data-venue="{{ $booking->venue->venue_name ?? 'N/A' }}"
-                                    data-address="{{ $booking->venue->venue_address ?? '' }}"
-                                    data-services="{{ $booking->services->pluck('service_name')->implode(', ') ?: 'None' }}"
-                                    data-date="{{ $booking->booking_date ? $booking->booking_date->format('Y-m-d') : '' }}"
-                                    data-start-time="{{ $booking->booking_start_time }}"
-                                    data-end-time="{{ $booking->booking_end_time }}"
-                                    data-receipt="{{ $booking->payments->first()->receipt_path ?? '' }}"
-                                    data-remarks="{{ $booking->verification_remarks ?? '' }}"
-                                    {{-- NEW: Fetch the total from the booking model --}}
-                                    data-total="₱{{ number_format($booking->total_price, 2) }}"
-                                >
-                                    View
-                                </button>
-                            </td>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="4" class="mgmt-empty">No bookings found</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                {{-- Denied Option --}}
+                <input type="radio" name="status" id="status_denied" value="denied" 
+                    onchange="this.form.submit()" {{ request('status') == 'denied' ? 'checked' : '' }}>
+                <label for="status_denied">Rejected</label>
+            </div>
+        </form>
     </div>
 
+    <div class="mgmt-table-wrap">
+        <table class="mgmt-table">
+            <thead>
+                <tr>
+                    <th>Client</th>
+                    <th>Date Submitted</th>
+                    <th>Status</th>
+                    <th style="width:220px;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($bookings as $booking)
+                    @php $bid = $booking->booking_id ?? $booking->id; @endphp
+                    <tr>
+                        {{-- Column 1: Client Name --}}
+                        <td>
+                            <strong>{{ $booking->client->username ?? $booking->client->first_name . ' ' . $booking->client->last_name }}</strong>
+                        </td>
+
+                        {{-- Column 2: Date Created --}}
+                        <td>
+                            <span style="font-size: 14px; color: #333; font-weight: 600;">
+                                {{ $booking->created_at->timezone('Asia/Manila')->format('M d, Y') }}
+                            </span>
+                            <br>
+                            <small style="color: #999; font-size: 11px;">
+                                {{ $booking->created_at->timezone('Asia/Manila')->format('h:i A') }}
+                            </small>
+                        </td>
+
+                        {{-- Column 3: Status --}}
+                        <td>
+                            <span class="mgmt-badge {{ $booking->status }}">
+                                {{ $booking->status === 'denied' ? 'Rejected' : ucfirst($booking->status) }}
+                            </span>
+                        </td>
+
+                        {{-- Column 4: Action --}}
+                        <td>
+                            <button
+                                class="mgmt-btn"
+                                onclick="openBookingModal(this)"
+                                data-id="{{ $bid }}"
+                                data-client="{{ $booking->client->first_name ?? 'N/A' }} {{ $booking->client->last_name ?? '' }}"
+                                data-event="{{ $booking->event->event_name ?? 'N/A' }}"
+                                data-pax="{{ $booking->pax->pax_description ?? ($booking->pax->pax_count ?? 'N/A') }}"
+                                data-venue="{{ $booking->venue->venue_name ?? 'N/A' }}"
+                                data-address="{{ $booking->venue->venue_address ?? '' }}"
+                                data-services="{{ $booking->services->pluck('service_name')->implode(', ') ?: 'None' }}"
+                                data-date="{{ $booking->booking_date ? $booking->booking_date->format('Y-m-d') : '' }}"
+                                data-start-time="{{ $booking->booking_start_time }}"
+                                data-end-time="{{ $booking->booking_end_time }}"
+                                data-receipt="{{ $booking->payments->first()->receipt_path ?? '' }}"
+                                data-remarks="{{ $booking->verification_remarks ?? '' }}"
+                                data-total="₱{{ number_format($booking->total_price, 2) }}"
+                            >
+                                View
+                            </button>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="4" class="mgmt-empty">No bookings found</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    {{-- ✅ PAGINATION LINKS --}}
+    <div class="mgmt-pagination-wrapper">
+        {{ $bookings->links('pagination::bootstrap-5') }}
+    </div>
 {{-- ✅ INJECT THE SEGREGATED MODAL PARTIAL --}}
 
 @include('management.partials.booking-modal')

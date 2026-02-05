@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Pagination\Paginator; // ✅ Added this import
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,5 +28,8 @@ class AppServiceProvider extends ServiceProvider
 
         // Ensures database compatibility for older MySQL versions
         Schema::defaultStringLength(191);
+
+        // ✅ Force Laravel to use Bootstrap 5 styling for pagination
+        Paginator::useBootstrapFive();
     }
 }
