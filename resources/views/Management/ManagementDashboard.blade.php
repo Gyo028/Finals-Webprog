@@ -100,7 +100,6 @@
                                     data-time="{{ ($booking->booking_start_time ?? '') . (!empty($booking->booking_end_time) ? ' – ' . $booking->booking_end_time : '') }}"
                                     data-pax="{{ $booking->pax ?? 'N/A' }}"
                                     data-receipt="{{ $booking->receipt_path ?? '' }}"
-                                    data-remarks="{{ $booking->verification_remarks ?? '' }}"
                                 >
                                     View
                                 </button>
@@ -167,22 +166,70 @@
 
 {{-- ✅ UPDATED JAVASCRIPT LOGIC --}}
 <script>
+/**
+ * Robustly converts 24h (13:00) to 12h (01:00 pm)
+ */
+function formatTo12Hour(timeStr) {
+    if (!timeStr || timeStr === 'N/A') return 'N/A';
+    
+    // Remove any leading/trailing spaces
+    timeStr = timeStr.trim();
+    
+    const parts = timeStr.split(':');
+    let hours = parseInt(parts[0]);
+    let minutes = parts[1] ? parts[1].substring(0, 2) : '00';
+    
+    if (isNaN(hours)) return 'N/A';
+
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // Handle midnight (0) as 12
+    
+    // Pad hours with leading zero (07:00 instead of 7:00)
+    const strHours = hours < 10 ? '0' + hours : hours;
+    
+    return `${strHours}:${minutes} ${ampm}`;
+}
+
 function openBookingModal(btn) {
-    // Populate text fields
+    // Basic Details
     document.getElementById('m_client').textContent = btn.dataset.client;
     document.getElementById('m_event').textContent  = btn.dataset.event;
     document.getElementById('m_venue').textContent  = btn.dataset.venue || 'N/A';
-    document.getElementById('m_remarks').textContent = btn.dataset.remarks || '—';
-    document.getElementById('m_date').textContent   = btn.dataset.date;
-    document.getElementById('m_time').textContent   = btn.dataset.time || 'N/A';
     document.getElementById('m_pax').textContent    = btn.dataset.pax;
 
-    // Handle Receipt Image Logic
+    // ✅ DATE: Month-DD-YYYY
+    const rawDate = btn.dataset.date;
+    if (rawDate) {
+        const dateObj = new Date(rawDate);
+        const month = dateObj.toLocaleString('en-US', { month: 'long' });
+        const day = dateObj.getDate();
+        const year = dateObj.getFullYear();
+        document.getElementById('m_date').textContent = `${month}-${day}-${year}`;
+    }
+
+    // ✅ TIME: 07:00 am - 06:00 pm (Handles the dash properly)
+    const rawTime = btn.dataset.time; 
+    if (rawTime && rawTime.includes('–') || rawTime.includes('-')) {
+        // Splitting by either a long dash (–) or a short dash (-)
+        const timeParts = rawTime.split(/[–-]/); 
+        if (timeParts.length >= 2) {
+            const start = formatTo12Hour(timeParts[0]);
+            const end = formatTo12Hour(timeParts[1]);
+            document.getElementById('m_time').textContent = `${start} - ${end}`;
+        } else {
+            document.getElementById('m_time').textContent = formatTo12Hour(timeParts[0]);
+        }
+    } else {
+        document.getElementById('m_time').textContent = formatTo12Hour(rawTime);
+    }
+
+    // Receipt Image
     const receipt = btn.dataset.receipt;
     const img = document.getElementById('m_receipt_img');
     const noReceipt = document.getElementById('m_no_receipt');
 
-    if (receipt) {
+    if (receipt && receipt !== "null") {
         img.src = '/' + receipt; 
         img.style.display = 'block';
         noReceipt.style.display = 'none';
@@ -191,28 +238,23 @@ function openBookingModal(btn) {
         noReceipt.style.display = 'block';
     }
 
-    // Set Form Action URLs
+    // Actions
     const id = btn.dataset.id;
     document.getElementById('approveForm').action = `/management/approve/${id}`;
     document.getElementById('rejectForm').action  = `/management/deny/${id}`;
 
-    // Reset Rejection form visibility
-    document.getElementById('rejectForm').style.display = 'none';
-    document.getElementById('action-buttons').style.display = 'flex';
-
-    // ✅ SHOW MODAL AS FLEX (Crucial for centering)
-    const modal = document.getElementById('bookingModal');
-    modal.style.display = 'flex';
+    hideReject();
+    document.getElementById('bookingModal').style.display = 'flex';
 }
 
-function closeBookingModal() {
-    document.getElementById('bookingModal').style.display = 'none';
+function closeBookingModal() { document.getElementById('bookingModal').style.display = 'none'; }
+function showReject() { 
+    document.getElementById('action-buttons').style.display = 'none'; 
+    document.getElementById('rejectForm').style.display = 'block'; 
 }
-
-function showReject() {
-    // Hide original buttons and show rejection input
-    document.getElementById('action-buttons').style.display = 'none';
-    document.getElementById('rejectForm').style.display = 'block';
+function hideReject() { 
+    document.getElementById('action-buttons').style.display = 'flex'; 
+    document.getElementById('rejectForm').style.display = 'none'; 
 }
 </script>
 
