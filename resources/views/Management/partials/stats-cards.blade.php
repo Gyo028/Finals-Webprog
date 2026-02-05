@@ -12,12 +12,12 @@
     <div class="mgmt-card">
         <div class="mgmt-card-title">Rejected</div>
         <div class="mgmt-card-value">
-            {{ $stats['Rejected'] ?? ($stats['rejected'] ?? 0) }}
+            {{ $stats['rejected'] ?? 0 }}
         </div>
     </div>
 
     <div class="mgmt-card">
-        <div class="mgmt-card-title">Total Payments</div>
+        <div class="mgmt-card-title">Total Approved Payments</div>
         <div class="mgmt-card-value">
             ₱{{ number_format($stats['payments'] ?? 0, 2) }}
         </div>
