@@ -8,6 +8,11 @@
 </head>
 <body>
     <header class="site-header">
-        <div class="logo">GR3AT A's</div>
+    <a href="#" class="logo">GR3AT A's</a>
+
+    <div class="header-right">
+        <a href="#features" class="nav-link">About</a>
+        <a href="#features" class="nav-link">Contact Us</a>
         <a href="{{ route('login') }}" class="book-btn">BOOK NOW</a>
-    </header>
+    </div>
+</header>
