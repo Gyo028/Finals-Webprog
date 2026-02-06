@@ -6,17 +6,20 @@ use Illuminate\Http\Request;
 use App\Models\Booking;
 use App\Models\Payment;
 use App\Models\Manager;
+use App\Models\Service;
+use App\Models\Event;
 use App\Mail\MyEmail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class ManagementController extends Controller
 {
     public function dashboard(Request $request)
     {
-        // 1. Get the status from the request. Default to 'pending' so the list isn't empty on load.
+        // 1. Get the status from the request. Default to 'pending'.
         $status = $request->query('status', Booking::STATUS_PENDING);
 
         // 2. Start the query with relationships
@@ -28,14 +31,10 @@ class ManagementController extends Controller
             $query->where('status', $status);
         }
 
-        /** * 4. Change ->get() to ->paginate(10)
-         * withQueryString() ensures that when you click page 2, 
-         * the URL keeps the ?status=... filter active.
-         */
-        // Temporarily change 10 to 1 to see the buttons appear
-        $bookings = $query->paginate(1)->withQueryString();
+        // 4. Paginate results
+        $bookings = $query->paginate(10)->withQueryString();
 
-        // ✅ Keep your Stats Logic as is (this stays the same)
+        // Stats Logic
         $stats = [
             'pending'  => Booking::where('status', Booking::STATUS_PENDING)->count(),
             'approved' => Booking::where('status', Booking::STATUS_APPROVED)->count(),
@@ -46,8 +45,7 @@ class ManagementController extends Controller
             })->sum('amount'),
         ];
 
-        // Optional: If you want to paginate the payments list too, change this to ->paginate(10)
-        $payments = Payment::with('booking.client')->latest()->get();
+        $payments = Payment::with('booking.client')->latest()->limit(10)->get();
 
         return view('Management.ManagementDashboard', compact('bookings', 'payments', 'stats'));
     }
@@ -82,7 +80,7 @@ class ManagementController extends Controller
                     ]));
                 }
             } catch (\Exception $e) {
-                \Log::error("Email failed for booking $id: " . $e->getMessage());
+                Log::error("Email failed for booking $id: " . $e->getMessage());
             }
         });
 
@@ -119,10 +117,73 @@ class ManagementController extends Controller
                     ]));
                 }
             } catch (\Exception $e) {
-                 \Log::error("Email failed for rejection $id: " . $e->getMessage());
+                 Log::error("Email failed for rejection $id: " . $e->getMessage());
             }
         });
 
         return redirect()->route('management.dashboard')->with('success', "Booking #{$id} denied.");
     }
+
+    public function services(Request $request)
+    {
+        $search = $request->query('search');
+        $query = Service::query()->latest();
+
+        if (!empty($search)) {
+            $query->where('service_name', 'LIKE', "%{$search}%")
+                  ->orWhere('service_description', 'LIKE', "%{$search}%");
+        }
+
+        $services = $query->paginate(10)->withQueryString();
+        return view('Management.services', compact('services'));
+    }
+
+    /**
+     * Display Event Packages
+     */
+    public function events(Request $request)
+    {
+        $search = $request->query('search');
+        $query = Event::query()->orderBy('event_id', 'desc');
+
+        if (!empty($search)) {
+            $query->where('event_name', 'LIKE', "%{$search}%");
+        }
+
+        $events = $query->paginate(10)->withQueryString();
+        return view('Management.events', compact('events'));
+    }
+
+    /**
+     * Store a new Event Package
+     */
+    public function storeEvent(Request $request)
+    {
+        $validated = $request->validate([
+            'event_name'       => 'required|string|max:255',
+            'event_base_price' => 'required|numeric|min:0',
+            'IsActive'         => 'required|boolean',
+        ]);
+
+        Event::create($validated);
+
+        return redirect()->back()->with('success', 'New event package created successfully!');
+    }
+
+    /**
+     * Update an existing Event Package
+     */
+    public function updateEvent(Request $request, $event_id)
+    {
+        $validated = $request->validate([
+            'event_name'       => 'required|string|max:255',
+            'event_base_price' => 'required|numeric|min:0',
+            'IsActive'         => 'required|boolean',
+        ]);
+
+        $event = Event::findOrFail($event_id);
+        $event->update($validated);
+
+        return redirect()->back()->with('success', 'Event package updated successfully!');
+    } 
 }

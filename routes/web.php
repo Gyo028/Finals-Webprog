@@ -141,13 +141,22 @@ Route::middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Management Routes (CLEANED - Duplicates Removed)
+    | Management Routes
     |--------------------------------------------------------------------------
     */
-    Route::get('/management/dashboard', [ManagementController::class, 'dashboard'])->name('management.dashboard');
-    Route::post('/management/approve/{id}', [ManagementController::class, 'approve'])->name('bookings.approve');
-    Route::post('/management/deny/{id}', [ManagementController::class, 'reject'])->name('bookings.deny');
-
+    Route::prefix('management')->name('management.')->group(function() {
+        Route::get('/dashboard', [ManagementController::class, 'dashboard'])->name('dashboard');
+        Route::get('/services', [ManagementController::class, 'services'])->name('services');
+        
+        // Event Management Routes
+        Route::get('/events', [ManagementController::class, 'events'])->name('events');
+        Route::post('/events', [ManagementController::class, 'storeEvent'])->name('events.store'); // For Add Modal
+        Route::put('/events/{event_id}', [ManagementController::class, 'updateEvent'])->name('events.update'); // For Edit Modal
+        
+        // Approval/Rejection routes
+        Route::post('/approve/{id}', [ManagementController::class, 'approve'])->name('approve');
+        Route::post('/reject/{id}', [ManagementController::class, 'reject'])->name('reject');
+    });
     /*
     |--------------------------------------------------------------------------
     | Client Routes

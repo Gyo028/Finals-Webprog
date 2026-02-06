@@ -1,0 +1,190 @@
+/* Professional Typeface Stack */
+:root {
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+    --slate-50: #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-500: #64748b;
+    --slate-600: #475569;
+    --slate-900: #0f172a;
+    --font-main: 'Inter', 'Instrument Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', Roboto, sans-serif;
+}
+
+/* --- MODAL BASE --- */
+.mgmt-modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+    font-family: var(--font-main);
+    transition: opacity 0.25s ease;
+}
+
+.mgmt-modal.is-active { display: flex; }
+
+.mgmt-modal-backdrop {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(12px); /* Premium frost effect */
+    cursor: pointer;
+}
+
+.mgmt-modal-content {
+    position: relative;
+    background: #fff;
+    width: 100%;
+    max-width: 460px;
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    animation: modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalScaleIn {
+    from { transform: scale(0.96) translateY(10px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* --- HEADER --- */
+.mgmt-modal-header {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--slate-100);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mgmt-modal-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--slate-900);
+    letter-spacing: -0.03em;
+}
+
+.btn-close-modal {
+    background: var(--slate-50);
+    border: none;
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    color: var(--slate-500);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-close-modal:hover { 
+    background: var(--slate-100);
+    color: var(--slate-900);
+}
+
+/* --- BODY & FORMS --- */
+.mgmt-modal-body { padding: 32px; }
+
+.mgmt-form-group { margin-bottom: 24px; }
+
+.mgmt-form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--slate-600);
+    margin-bottom: 8px;
+}
+
+.mgmt-form-group input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--slate-200);
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 15px;
+    background: var(--slate-50);
+    color: var(--slate-900);
+    transition: all 0.2s ease;
+}
+
+.mgmt-form-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+/* --- RADIO TILES --- */
+.status-radio-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.radio-item input { display: none; }
+
+.radio-tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--slate-200);
+    border-radius: 12px;
+    background: var(--slate-50);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 600;
+    color: var(--slate-500);
+}
+
+.radio-item input:checked + .radio-tile {
+    background: #f0fdf4;
+    border-color: #22c55e;
+    color: #15803d;
+}
+
+.radio-item input:checked + .tile-inactive {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+
+/* --- FOOTER --- */
+.mgmt-modal-footer {
+    padding: 24px 32px;
+    background: var(--slate-50);
+    border-top: 1px solid var(--slate-100);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.btn-secondary {
+    background: #fff;
+    border: 1px solid var(--slate-200);
+    color: var(--slate-600);
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-primary-action {
+    background: var(--slate-900);
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-primary-action:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
