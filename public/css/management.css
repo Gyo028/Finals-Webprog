@@ -168,12 +168,96 @@
 .mgmt-badge.approved { background: #d4edda; color: #155724; }
 .mgmt-badge.denied { background: #f8d7da; color: #721c24; }
 
-/* ========================================================= */
-/* ⭐ FIXED PAGINATION STYLE */
-/* ========================================================= */
+/* --- PROOF OF PAYMENT / MODAL RECEIPT --- */
+.receipt-box {
+    width: 100%;
+    min-height: 250px;
+    background: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: 10px 0;
+}
 
-.mgmt-pagination-wrapper,
-#paginationWrapper {
+.receipt-box img {
+    max-width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    cursor: zoom-in;
+}
+
+.receipt-box .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #adb5bd;
+    padding: 0; /* Override global empty state padding */
+}
+
+.receipt-box i {
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+/* --- FLASH MESSAGES (ALERTS) - UPDATED TO MIDDLE --- */
+.mgmt-alert {
+    position: fixed;
+    top: 25px;
+    left: 50%; /* Position at horizontal center */
+    transform: translateX(-50%); /* Offset by half its width to perfectly center */
+    z-index: 9999;
+    padding: 16px 24px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    font-size: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    min-width: 320px;
+    
+    /* Changed animation to slide down from top instead of right */
+    animation: slideInDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.mgmt-alert.success {
+    background-color: #e6f7ee;
+    color: #2ecc71;
+    border: 1px solid #2ecc71;
+}
+
+.mgmt-alert.error {
+    background-color: #feecef;
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
+}
+
+/* Updated Fade-out for the middle position */
+.mgmt-alert.fade-out {
+    opacity: 0;
+    top: 10px; /* Moves slightly up as it fades */
+    transition: all 0.5s ease;
+}
+
+/* New Animation: Slide down from the top edge */
+@keyframes slideInDown {
+    from { 
+        top: -100px; 
+        opacity: 0; 
+        transform: translateX(-50%); 
+    }
+    to { 
+        top: 25px; 
+        opacity: 1; 
+        transform: translateX(-50%); 
+    }
+}
+
+/* --- PAGINATION --- */
+.mgmt-pagination-wrapper, #paginationWrapper {
     margin-top: 30px;
     padding-top: 20px;
     border-top: 1px solid #f1f1f1;
@@ -181,8 +265,6 @@
     justify-content: center;
 }
 
-/* Remove bullets & align horizontally */
-.mgmt-pagination-wrapper .pagination,
 #paginationWrapper .pagination {
     list-style: none;
     display: flex;
@@ -191,14 +273,6 @@
     margin: 0;
 }
 
-/* Remove bullets */
-.mgmt-pagination-wrapper .page-item,
-#paginationWrapper .page-item {
-    list-style: none;
-}
-
-/* Pagination button */
-.mgmt-pagination-wrapper .page-link,
 #paginationWrapper .page-link {
     min-width: 40px;
     height: 40px;
@@ -214,35 +288,15 @@
     transition: all 0.2s ease;
 }
 
-/* Hover */
-.mgmt-pagination-wrapper .page-link:hover,
-#paginationWrapper .page-link:hover {
-    background: #111;
-    color: #fff;
-    border-color: #111;
-}
-
-/* Active page */
-.mgmt-pagination-wrapper .page-item.active .page-link,
+#paginationWrapper .page-link:hover, 
 #paginationWrapper .page-item.active .page-link {
     background: #111;
     color: #fff;
     border-color: #111;
 }
 
-/* Disabled */
-.mgmt-pagination-wrapper .page-item.disabled .page-link,
-#paginationWrapper .page-item.disabled .page-link {
-    background: #f5f5f5;
-    color: #bbb;
-    border-color: #eee;
-    cursor: not-allowed;
-}
-
-/* ========================================================= */
-
+/* --- UTILS --- */
 .empty-state { text-align: center; padding: 60px 0; color: #ccc; }
-
 .text-left { text-align: left; }
 .text-center { text-align: center; }
 .text-right { text-align: right; }

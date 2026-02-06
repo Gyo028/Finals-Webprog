@@ -113,9 +113,11 @@ class ManagementController extends Controller
             return redirect()->back()->with('error', 'Manager profile not found.');
         }
 
-        DB::transaction(function () use ($request, $id, $manager) {
-            $booking = Booking::findOrFail($id);
-            
+        // 1. Fetch the booking first to get the client name for the flash message
+        $booking = Booking::findOrFail($id);
+        $clientName = $booking->client->first_name . ' ' . $booking->client->last_name;
+
+        DB::transaction(function () use ($request, $booking, $manager) {
             $booking->update([
                 'status'                 => Booking::STATUS_APPROVED,
                 'verification_remarks'   => $request->admin_notes,
@@ -131,15 +133,17 @@ class ManagementController extends Controller
                         'clientName' => $booking->client->first_name . ' ' . $booking->client->last_name,
                         'status'     => 'approved',
                         'remarks'    => $request->admin_notes,
-                        'bookingId'  => $id
+                        'bookingId'  => $booking->id
                     ]));
                 }
             } catch (\Exception $e) {
-                Log::error("Email failed for booking $id: " . $e->getMessage());
+                Log::error("Email failed for booking {$booking->id}: " . $e->getMessage());
             }
         });
 
-        return redirect()->route('management.dashboard', ['tab' => 'bookings'])->with('success', "Booking #{$id} approved.");
+        // 2. EDIT YOUR MESSAGE HERE:
+        return redirect()->route('management.dashboard', ['tab' => 'bookings'])
+            ->with('success', "Booking for {$clientName} has been successfully approved.");
     }
 
     /**
@@ -153,8 +157,11 @@ class ManagementController extends Controller
             return redirect()->back()->with('error', 'Manager profile not found.');
         }
 
-        DB::transaction(function () use ($request, $id, $manager) {
-            $booking = Booking::findOrFail($id);
+        // 1. Fetch the booking first to capture the client name
+        $booking = Booking::findOrFail($id);
+        $clientName = $booking->client->first_name . ' ' . $booking->client->last_name;
+
+        DB::transaction(function () use ($request, $booking, $manager) {
             
             $booking->update([
                 'status'                 => Booking::STATUS_DENIED,
@@ -171,15 +178,17 @@ class ManagementController extends Controller
                         'clientName' => $booking->client->first_name . ' ' . $booking->client->last_name,
                         'status'     => 'denied',
                         'remarks'    => $request->reason,
-                        'bookingId'  => $id
+                        'bookingId'  => $booking->id
                     ]));
                 }
             } catch (\Exception $e) {
-                 Log::error("Email failed for rejection $id: " . $e->getMessage());
+                 Log::error("Email failed for rejection {$booking->id}: " . $e->getMessage());
             }
         });
 
-        return redirect()->route('management.dashboard', ['tab' => 'bookings'])->with('success', "Booking #{$id} denied.");
+        // 2. Using 'error' to trigger the red alert style in your CSS
+        return redirect()->route('management.dashboard', ['tab' => 'bookings'])
+            ->with('error', "Booking for {$clientName} has been rejected.");
     }
 
     /* --- Actions for Offerings --- */
