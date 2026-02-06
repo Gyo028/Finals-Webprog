@@ -146,17 +146,29 @@ Route::middleware(['auth'])->group(function () {
     */
     Route::prefix('management')->name('management.')->group(function() {
         Route::get('/dashboard', [ManagementController::class, 'dashboard'])->name('dashboard');
-        Route::get('/services', [ManagementController::class, 'services'])->name('services');
         
-        // Event Management Routes
-        Route::get('/events', [ManagementController::class, 'events'])->name('events');
-        Route::post('/events', [ManagementController::class, 'storeEvent'])->name('events.store'); // For Add Modal
-        Route::put('/events/{event_id}', [ManagementController::class, 'updateEvent'])->name('events.update'); // For Edit Modal
+        // ✅ THE UNIFIED OFFERINGS PAGE (New)
+        Route::get('/offerings', [ManagementController::class, 'offerings'])->name('offerings');
+
+        // ✅ DATA HANDLING ROUTES (Stay active for Modals and Forms)
         
-        // Approval/Rejection routes
+        // Events
+        Route::post('/event', [ManagementController::class, 'storeEvent'])->name('event.store');
+        Route::put('/event/{id}', [ManagementController::class, 'updateEvent'])->name('event.update');
+
+        // Pax
+        Route::post('/pax', [ManagementController::class, 'storePax'])->name('pax.store');
+        Route::put('/pax/{id}', [ManagementController::class, 'updatePax'])->name('pax.update');
+
+        // Services
+        Route::post('/service', [ManagementController::class, 'storeService'])->name('service.store');
+        Route::put('/service/{id}', [ManagementController::class, 'updateService'])->name('service.update');
+                
+        // Approval/Rejection
         Route::post('/approve/{id}', [ManagementController::class, 'approve'])->name('approve');
-        Route::post('/reject/{id}', [ManagementController::class, 'reject'])->name('reject');
+        Route::post('/deny/{id}', [ManagementController::class, 'reject'])->name('reject');
     });
+
     /*
     |--------------------------------------------------------------------------
     | Client Routes

@@ -8,7 +8,7 @@
             </button>
         </div>
         
-        <form action="{{ route('management.events.store') }}" method="POST">
+        <form action="{{ route('management.event.store') }}" method="POST">
             @csrf
             <div class="mgmt-modal-body">
                 <div class="mgmt-form-group">

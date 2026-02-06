@@ -22,19 +22,20 @@ class Pax extends Model
 
     /**
      * The attributes that are mass assignable.
-     * Added 'pax_count' to the list.
      */
     protected $fillable = [
-        'pax_count', // New field added
+        'pax_count',
         'pax_price',
+        'IsActive', // ✅ added
     ];
 
     /**
      * The attributes that should be cast.
      */
     protected $casts = [
-        'pax_count' => 'integer',   // Cast to integer for clean math
+        'pax_count' => 'integer',
         'pax_price' => 'decimal:2',
+        'IsActive' => 'boolean', // ✅ added
     ];
 
     /**

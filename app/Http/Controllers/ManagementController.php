@@ -17,24 +17,22 @@ use Carbon\Carbon;
 
 class ManagementController extends Controller
 {
+    /**
+     * Display the Management Dashboard with stats and recent bookings.
+     */
     public function dashboard(Request $request)
     {
-        // 1. Get the status from the request. Default to 'pending'.
         $status = $request->query('status', Booking::STATUS_PENDING);
 
-        // 2. Start the query with relationships
         $query = Booking::with(['client.user', 'venue', 'event', 'pax', 'payments', 'services'])
                         ->latest();
 
-        // 3. Apply the filter if a status is provided
         if (!empty($status)) {
             $query->where('status', $status);
         }
 
-        // 4. Paginate results
         $bookings = $query->paginate(10)->withQueryString();
 
-        // Stats Logic
         $stats = [
             'pending'  => Booking::where('status', Booking::STATUS_PENDING)->count(),
             'approved' => Booking::where('status', Booking::STATUS_APPROVED)->count(),
@@ -50,6 +48,34 @@ class ManagementController extends Controller
         return view('Management.ManagementDashboard', compact('bookings', 'payments', 'stats'));
     }
 
+    /**
+     * UNIFIED OFFERINGS VIEW (Events, Pax, Services)
+     */
+    public function offerings(Request $request)
+    {
+        $search = $request->query('search');
+
+        // 1. Fetch Events with independent pagination
+        $events = Event::when($search, function($q) use ($search) {
+            $q->where('event_name', 'LIKE', "%{$search}%");
+        })->orderBy('event_id', 'desc')->paginate(10, ['*'], 'events_page')->withQueryString();
+
+        // 2. Fetch Pax with independent pagination
+        $paxes = DB::table('paxes')->when($search, function($q) use ($search) {
+            $q->where('pax_count', 'LIKE', "%{$search}%");
+        })->orderBy('pax_count', 'asc')->paginate(10, ['*'], 'pax_page')->withQueryString();
+
+        // 3. Fetch Services with independent pagination
+        $services = Service::when($search, function($q) use ($search) {
+            $q->where('service_name', 'LIKE', "%{$search}%");
+        })->latest()->paginate(10, ['*'], 'services_page')->withQueryString();
+
+        return view('Management.Offering', compact('events', 'paxes', 'services'));
+    }
+
+    /**
+     * Approve a booking and send confirmation email.
+     */
     public function approve(Request $request, $id)
     {
         $manager = Manager::where('user_id', Auth::id())->first();
@@ -87,6 +113,9 @@ class ManagementController extends Controller
         return redirect()->route('management.dashboard')->with('success', "Booking #{$id} approved.");
     }
 
+    /**
+     * Reject a booking and send notification email.
+     */
     public function reject(Request $request, $id)
     {
         $manager = Manager::where('user_id', Auth::id())->first();
@@ -124,39 +153,43 @@ class ManagementController extends Controller
         return redirect()->route('management.dashboard')->with('success', "Booking #{$id} denied.");
     }
 
-    public function services(Request $request)
+    /*
+    |--------------------------------------------------------------------------
+    | SERVICE ACTIONS
+    |--------------------------------------------------------------------------
+    */
+
+    public function storeService(Request $request)
     {
-        $search = $request->query('search');
-        $query = Service::query()->latest();
+        $validated = $request->validate([
+            'service_name'  => 'required|string|max:255',
+            'service_price' => 'required|numeric|min:0',
+            'IsActive'      => 'required|boolean',
+        ]);
 
-        if (!empty($search)) {
-            $query->where('service_name', 'LIKE', "%{$search}%")
-                  ->orWhere('service_description', 'LIKE', "%{$search}%");
-        }
-
-        $services = $query->paginate(10)->withQueryString();
-        return view('Management.services', compact('services'));
+        Service::create($validated);
+        return redirect()->back()->with('success', 'New service added successfully!');
     }
 
-    /**
-     * Display Event Packages
-     */
-    public function events(Request $request)
+    public function updateService(Request $request, $id)
     {
-        $search = $request->query('search');
-        $query = Event::query()->orderBy('event_id', 'desc');
+        $validated = $request->validate([
+            'service_name'  => 'required|string|max:255',
+            'service_price' => 'required|numeric|min:0',
+            'IsActive'      => 'required|boolean',
+        ]);
 
-        if (!empty($search)) {
-            $query->where('event_name', 'LIKE', "%{$search}%");
-        }
-
-        $events = $query->paginate(10)->withQueryString();
-        return view('Management.events', compact('events'));
+        $service = Service::findOrFail($id);
+        $service->update($validated);
+        return redirect()->back()->with('success', 'Service updated successfully!');
     }
 
-    /**
-     * Store a new Event Package
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | EVENT ACTIONS
+    |--------------------------------------------------------------------------
+    */
+
     public function storeEvent(Request $request)
     {
         $validated = $request->validate([
@@ -166,14 +199,10 @@ class ManagementController extends Controller
         ]);
 
         Event::create($validated);
-
         return redirect()->back()->with('success', 'New event package created successfully!');
     }
 
-    /**
-     * Update an existing Event Package
-     */
-    public function updateEvent(Request $request, $event_id)
+    public function updateEvent(Request $request, $id)
     {
         $validated = $request->validate([
             'event_name'       => 'required|string|max:255',
@@ -181,9 +210,53 @@ class ManagementController extends Controller
             'IsActive'         => 'required|boolean',
         ]);
 
-        $event = Event::findOrFail($event_id);
+        $event = Event::findOrFail($id);
         $event->update($validated);
-
         return redirect()->back()->with('success', 'Event package updated successfully!');
-    } 
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | PAX ACTIONS
+    |--------------------------------------------------------------------------
+    */
+
+    public function storePax(Request $request)
+    {
+        $validated = $request->validate([
+            'pax_count' => 'required|integer|min:1|unique:paxes,pax_count',
+            'pax_price' => 'required|numeric|min:0',
+            'IsActive'  => 'required|boolean',
+        ]);
+
+        DB::table('paxes')->insert([
+            'pax_count'  => $validated['pax_count'],
+            'pax_price'  => $validated['pax_price'],
+            'IsActive'   => $validated['IsActive'],
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'New pax tier added successfully!');
+    }
+
+    public function updatePax(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'pax_count' => 'required|integer|min:1|unique:paxes,pax_count,' . $id . ',pax_id',
+            'pax_price' => 'required|numeric|min:0',
+            'IsActive'  => 'required|boolean',
+        ]);
+
+        DB::table('paxes')
+            ->where('pax_id', $id)
+            ->update([
+                'pax_count'  => $validated['pax_count'],
+                'pax_price'  => $validated['pax_price'],
+                'IsActive'   => $validated['IsActive'],
+                'updated_at' => now(),
+            ]);
+
+        return redirect()->back()->with('success', 'Pax tier updated successfully!');
+    }
 }

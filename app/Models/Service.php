@@ -21,6 +21,7 @@ class Service extends Model
     protected $fillable = [
         'service_name',
         'service_price',
+        'IsActive', // ✅ added
     ];
 
     /**
@@ -28,6 +29,7 @@ class Service extends Model
      */
     protected $casts = [
         'service_price' => 'decimal:2',
+        'IsActive' => 'boolean', // ✅ added
     ];
 
     /**
@@ -37,9 +39,9 @@ class Service extends Model
     public function bookings(): BelongsToMany
     {
         return $this->belongsToMany(
-            Booking::class, 
-            'booking_services', 
-            'service_id', 
+            Booking::class,
+            'booking_services',
+            'service_id',
             'booking_id'
         )->withTimestamps();
     }
