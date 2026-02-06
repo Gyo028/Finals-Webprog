@@ -5,18 +5,20 @@
     <div class="mgmt-card-toolbar">
         <div class="toolbar-left">
             {{-- FIXED: Changed route to management.offerings --}}
-            <form action="{{ route('management.offerings') }}" method="GET" id="searchFormEvents" class="mgmt-search-wrapper">
+            <form action="{{ route('management.dashboard') }}" method="GET" id="searchFormEvents" class="mgmt-search-wrapper">
+                <input type="hidden" name="tab" value="offerings">
+
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
+
                 <input type="text" 
-                       name="search" 
-                       id="searchInputEvents"
-                       placeholder="Search event packages..." 
-                       value="{{ request('search') }}"
-                       autocomplete="off">
-                
+                    name="search" 
+                    id="searchInputEvents"
+                    placeholder="Search event packages..." 
+                    value="{{ request('search') }}"
+                    autocomplete="off">
+
                 @if(request('search'))
-                    {{-- FIXED: Changed route to management.offerings --}}
-                    <a href="{{ route('management.offerings') }}" class="search-clear" title="Clear Search">
+                    <a href="{{ route('management.dashboard', ['tab' => 'offerings']) }}" class="search-clear">
                         <i class="fa-solid fa-circle-xmark"></i>
                     </a>
                 @endif

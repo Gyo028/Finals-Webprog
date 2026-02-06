@@ -19,15 +19,12 @@ class ManagementController extends Controller
 {
     /**
      * Unified Controller Method for the Main Management Page
-     * Handles Tab Switching, Search, and Status Filtering
      */
     public function dashboard(Request $request)
     {
-        // 1. Determine which tab we are on
         $currentTab = $request->query('tab', 'bookings');
         $search = $request->query('search');
         
-        // 2. Always fetch Stats for the top cards
         $stats = [
             'pending'  => Booking::where('status', Booking::STATUS_PENDING)->count(),
             'approved' => Booking::where('status', Booking::STATUS_APPROVED)->count(),
@@ -37,44 +34,33 @@ class ManagementController extends Controller
             })->sum('amount'),
         ];
 
-        // 3. Initialize variables
         $bookings = collect();
         $events = collect();
         $paxes = collect();
         $services = collect();
         $payments = collect();
 
-        // 4. Load Data based on the active tab
         if ($currentTab === 'offerings') {
-            
-            // Search logic for Events
             $events = Event::when($search, function($q) use ($search) {
                 $q->where('event_name', 'LIKE', "%{$search}%");
             })->orderBy('event_id', 'desc')->paginate(5, ['*'], 'events_page')->withQueryString();
 
-            // Search logic for Pax tiers
             $paxes = DB::table('paxes')->when($search, function($q) use ($search) {
                 $q->where('pax_count', 'LIKE', "%{$search}%");
             })->orderBy('pax_count', 'asc')->paginate(5, ['*'], 'pax_page')->withQueryString();
 
-            // Search logic for Services
             $services = Service::when($search, function($q) use ($search) {
                 $q->where('service_name', 'LIKE', "%{$search}%");
             })->latest()->paginate(5, ['*'], 'services_page')->withQueryString();
             
         } else {
-            // Default: Bookings Tab
             $status = $request->query('status', Booking::STATUS_PENDING);
-            
-            $query = Booking::with(['client.user', 'venue', 'event', 'pax', 'payments', 'services'])
-                            ->latest();
+            $query = Booking::with(['client.user', 'venue', 'event', 'pax', 'payments', 'services'])->latest();
 
-            // Filter by Status (Pending/Approved/Denied)
             if (!empty($status)) {
                 $query->where('status', $status);
             }
 
-            // ✅ NEW: Search by Booking ID or Client Name
             if (!empty($search)) {
                 $query->where(function($q) use ($search) {
                     $q->where('booking_id', 'LIKE', "%{$search}%")
@@ -85,20 +71,20 @@ class ManagementController extends Controller
                 });
             }
 
-            $bookings = $query->paginate(2, ['*'], 'bookings_page')->withQueryString();
-            
-            // Recent Payments (limited to 10 for dashboard preview)
+            $bookings = $query->paginate(5, ['*'], 'bookings_page')->withQueryString();
             $payments = Payment::with('booking.client')->latest()->limit(10)->get();
         }
 
+        // ✅ AJAX CHECK: If the request is AJAX (from your JS search), return only the partials
+        if ($request->ajax()) {
+            if ($currentTab === 'offerings') {
+                return view('Management.Offering', compact('events', 'paxes', 'services', 'currentTab', 'search'))->render();
+            }
+            return view('Management.ManagementDashboard', compact('bookings', 'currentTab', 'search', 'payments'))->render();
+        }
+
         return view('Management.MainManagement', compact(
-            'currentTab', 
-            'stats', 
-            'bookings', 
-            'events', 
-            'paxes', 
-            'services', 
-            'payments'
+            'currentTab', 'stats', 'bookings', 'events', 'paxes', 'services', 'payments'
         ));
     }
 
@@ -108,12 +94,8 @@ class ManagementController extends Controller
     public function approve(Request $request, $id)
     {
         $manager = Manager::where('user_id', Auth::id())->first();
+        if (!$manager) return redirect()->back()->with('error', 'Manager profile not found.');
 
-        if (!$manager) {
-            return redirect()->back()->with('error', 'Manager profile not found.');
-        }
-
-        // 1. Fetch the booking first to get the client name for the flash message
         $booking = Booking::findOrFail($id);
         $clientName = $booking->client->first_name . ' ' . $booking->client->last_name;
 
@@ -141,9 +123,7 @@ class ManagementController extends Controller
             }
         });
 
-        // 2. EDIT YOUR MESSAGE HERE:
-        return redirect()->route('management.dashboard', ['tab' => 'bookings'])
-            ->with('success', "Booking for {$clientName} has been successfully approved.");
+        return redirect()->to(url()->previous())->with('success', "Booking for {$clientName} approved.");
     }
 
     /**
@@ -152,17 +132,12 @@ class ManagementController extends Controller
     public function reject(Request $request, $id)
     {
         $manager = Manager::where('user_id', Auth::id())->first();
+        if (!$manager) return redirect()->back()->with('error', 'Manager profile not found.');
 
-        if (!$manager) {
-            return redirect()->back()->with('error', 'Manager profile not found.');
-        }
-
-        // 1. Fetch the booking first to capture the client name
         $booking = Booking::findOrFail($id);
         $clientName = $booking->client->first_name . ' ' . $booking->client->last_name;
 
         DB::transaction(function () use ($request, $booking, $manager) {
-            
             $booking->update([
                 'status'                 => Booking::STATUS_DENIED,
                 'verification_remarks'   => $request->reason, 
@@ -186,12 +161,45 @@ class ManagementController extends Controller
             }
         });
 
-        // 2. Using 'error' to trigger the red alert style in your CSS
-        return redirect()->route('management.dashboard', ['tab' => 'bookings'])
-            ->with('error', "Booking for {$clientName} has been rejected.");
+        return redirect()->to(url()->previous())->with('error', "Booking for {$clientName} rejected.");
     }
 
-    /* --- Actions for Offerings --- */
+    /**
+     * Cancel an approved booking
+     */
+    public function cancel(Request $request, $id)
+    {
+        $manager = Manager::where('user_id', Auth::id())->first();
+        if (!$manager) return redirect()->back()->with('error', 'Manager profile not found.');
+
+        $booking = Booking::findOrFail($id);
+        $clientName = $booking->client->first_name . ' ' . $booking->client->last_name;
+
+        DB::transaction(function () use ($request, $booking, $manager) {
+            $booking->update([
+                'status'               => 'denied', // or your specific cancelled status
+                'verification_remarks' => $request->reason,
+                'verified_at'          => now(),
+            ]);
+
+            try {
+                if ($booking->client?->user?->email) {
+                    Mail::to($booking->client->user->email)->send(new MyEmail([
+                        'clientName' => $clientName,
+                        'status'     => 'cancelled',
+                        'remarks'    => $request->reason,
+                        'bookingId'  => $booking->id
+                    ]));
+                }
+            } catch (\Exception $e) {
+                Log::error("Email failed for cancellation {$booking->id}: " . $e->getMessage());
+            }
+        });
+
+        return redirect()->to(url()->previous())->with('error', "Booking for {$clientName} cancelled.");
+    }
+
+    /* --- CRUD Actions for Offerings --- */
 
     public function storeService(Request $request)
     {
@@ -202,7 +210,7 @@ class ManagementController extends Controller
         ]);
 
         Service::create($validated);
-        return redirect()->route('management.dashboard', ['tab' => 'offerings'])->with('success', 'New service added successfully!');
+        return redirect()->to(url()->previous())->with('success', 'New service added successfully!');
     }
 
     public function updateService(Request $request, $id)
@@ -215,7 +223,7 @@ class ManagementController extends Controller
 
         $service = Service::findOrFail($id);
         $service->update($validated);
-        return redirect()->route('management.dashboard', ['tab' => 'offerings'])->with('success', 'Service updated successfully!');
+        return redirect()->to(url()->previous())->with('success', 'Service updated successfully!');
     }
 
     public function storeEvent(Request $request)
@@ -227,7 +235,7 @@ class ManagementController extends Controller
         ]);
 
         Event::create($validated);
-        return redirect()->route('management.dashboard', ['tab' => 'offerings'])->with('success', 'New event package created successfully!');
+        return redirect()->to(url()->previous())->with('success', 'New event package created successfully!');
     }
 
     public function updateEvent(Request $request, $id)
@@ -240,7 +248,7 @@ class ManagementController extends Controller
 
         $event = Event::findOrFail($id);
         $event->update($validated);
-        return redirect()->route('management.dashboard', ['tab' => 'offerings'])->with('success', 'Event package updated successfully!');
+        return redirect()->to(url()->previous())->with('success', 'Event package updated successfully!');
     }
 
     public function storePax(Request $request)
@@ -259,7 +267,7 @@ class ManagementController extends Controller
             'updated_at' => now(),
         ]);
 
-        return redirect()->route('management.dashboard', ['tab' => 'offerings'])->with('success', 'New pax tier added successfully!');
+        return redirect()->to(url()->previous())->with('success', 'New pax tier added successfully!');
     }
 
     public function updatePax(Request $request, $id)
@@ -279,6 +287,6 @@ class ManagementController extends Controller
                 'updated_at' => now(),
             ]);
 
-        return redirect()->route('management.dashboard', ['tab' => 'offerings'])->with('success', 'Pax tier updated successfully!');
+        return redirect()->to(url()->previous())->with('success', 'Pax tier updated successfully!');
     }
 }
