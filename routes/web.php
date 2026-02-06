@@ -141,17 +141,19 @@ Route::middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Management Routes
+    | Management Routes (Role 1)
     |--------------------------------------------------------------------------
     */
     Route::prefix('management')->name('management.')->group(function() {
+        
+        // Main Entry point (Handles both tabs via query params)
         Route::get('/dashboard', [ManagementController::class, 'dashboard'])->name('dashboard');
         
-        // ✅ THE UNIFIED OFFERINGS PAGE (New)
-        Route::get('/offerings', [ManagementController::class, 'offerings'])->name('offerings');
+        // ❌ FIXED: Re-added this name to prevent the RouteNotFound error in your Blade
+        // It simply points to the same dashboard method.
+        Route::get('/offerings', [ManagementController::class, 'dashboard'])->name('offerings');
 
-        // ✅ DATA HANDLING ROUTES (Stay active for Modals and Forms)
-        
+        /* Data Handling */
         // Events
         Route::post('/event', [ManagementController::class, 'storeEvent'])->name('event.store');
         Route::put('/event/{id}', [ManagementController::class, 'updateEvent'])->name('event.update');
@@ -171,7 +173,7 @@ Route::middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Client Routes
+    | Client Routes (Role 2)
     |--------------------------------------------------------------------------
     */
     Route::get('/client/dashboard', function (Request $request) {

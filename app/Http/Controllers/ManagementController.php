@@ -18,70 +18,99 @@ use Carbon\Carbon;
 class ManagementController extends Controller
 {
     /**
-     * Display the Management Dashboard with stats and recent bookings.
+     * Unified Controller Method for the Main Management Page
+     * Handles Tab Switching, Search, and Status Filtering
      */
     public function dashboard(Request $request)
     {
-        $status = $request->query('status', Booking::STATUS_PENDING);
-
-        $query = Booking::with(['client.user', 'venue', 'event', 'pax', 'payments', 'services'])
-                        ->latest();
-
-        if (!empty($status)) {
-            $query->where('status', $status);
-        }
-
-        $bookings = $query->paginate(10)->withQueryString();
-
+        // 1. Determine which tab we are on
+        $currentTab = $request->query('tab', 'bookings');
+        $search = $request->query('search');
+        
+        // 2. Always fetch Stats for the top cards
         $stats = [
             'pending'  => Booking::where('status', Booking::STATUS_PENDING)->count(),
             'approved' => Booking::where('status', Booking::STATUS_APPROVED)->count(),
             'rejected' => Booking::where('status', Booking::STATUS_DENIED)->count(),
-            
             'payments' => (float) Payment::whereHas('booking', function ($q) {
                 $q->where('status', Booking::STATUS_APPROVED);
             })->sum('amount'),
         ];
 
-        $payments = Payment::with('booking.client')->latest()->limit(10)->get();
+        // 3. Initialize variables
+        $bookings = collect();
+        $events = collect();
+        $paxes = collect();
+        $services = collect();
+        $payments = collect();
 
-        return view('Management.ManagementDashboard', compact('bookings', 'payments', 'stats'));
+        // 4. Load Data based on the active tab
+        if ($currentTab === 'offerings') {
+            
+            // Search logic for Events
+            $events = Event::when($search, function($q) use ($search) {
+                $q->where('event_name', 'LIKE', "%{$search}%");
+            })->orderBy('event_id', 'desc')->paginate(5, ['*'], 'events_page')->withQueryString();
+
+            // Search logic for Pax tiers
+            $paxes = DB::table('paxes')->when($search, function($q) use ($search) {
+                $q->where('pax_count', 'LIKE', "%{$search}%");
+            })->orderBy('pax_count', 'asc')->paginate(5, ['*'], 'pax_page')->withQueryString();
+
+            // Search logic for Services
+            $services = Service::when($search, function($q) use ($search) {
+                $q->where('service_name', 'LIKE', "%{$search}%");
+            })->latest()->paginate(5, ['*'], 'services_page')->withQueryString();
+            
+        } else {
+            // Default: Bookings Tab
+            $status = $request->query('status', Booking::STATUS_PENDING);
+            
+            $query = Booking::with(['client.user', 'venue', 'event', 'pax', 'payments', 'services'])
+                            ->latest();
+
+            // Filter by Status (Pending/Approved/Denied)
+            if (!empty($status)) {
+                $query->where('status', $status);
+            }
+
+            // ✅ NEW: Search by Booking ID or Client Name
+            if (!empty($search)) {
+                $query->where(function($q) use ($search) {
+                    $q->where('booking_id', 'LIKE', "%{$search}%")
+                      ->orWhereHas('client', function($cq) use ($search) {
+                          $cq->where('first_name', 'LIKE', "%{$search}%")
+                             ->orWhere('last_name', 'LIKE', "%{$search}%");
+                      });
+                });
+            }
+
+            $bookings = $query->paginate(2, ['*'], 'bookings_page')->withQueryString();
+            
+            // Recent Payments (limited to 10 for dashboard preview)
+            $payments = Payment::with('booking.client')->latest()->limit(10)->get();
+        }
+
+        return view('Management.MainManagement', compact(
+            'currentTab', 
+            'stats', 
+            'bookings', 
+            'events', 
+            'paxes', 
+            'services', 
+            'payments'
+        ));
     }
 
     /**
-     * UNIFIED OFFERINGS VIEW (Events, Pax, Services)
-     */
-    public function offerings(Request $request)
-    {
-        $search = $request->query('search');
-
-        // 1. Fetch Events with independent pagination
-        $events = Event::when($search, function($q) use ($search) {
-            $q->where('event_name', 'LIKE', "%{$search}%");
-        })->orderBy('event_id', 'desc')->paginate(10, ['*'], 'events_page')->withQueryString();
-
-        // 2. Fetch Pax with independent pagination
-        $paxes = DB::table('paxes')->when($search, function($q) use ($search) {
-            $q->where('pax_count', 'LIKE', "%{$search}%");
-        })->orderBy('pax_count', 'asc')->paginate(10, ['*'], 'pax_page')->withQueryString();
-
-        // 3. Fetch Services with independent pagination
-        $services = Service::when($search, function($q) use ($search) {
-            $q->where('service_name', 'LIKE', "%{$search}%");
-        })->latest()->paginate(10, ['*'], 'services_page')->withQueryString();
-
-        return view('Management.Offering', compact('events', 'paxes', 'services'));
-    }
-
-    /**
-     * Approve a booking and send confirmation email.
+     * Approve a booking
      */
     public function approve(Request $request, $id)
     {
         $manager = Manager::where('user_id', Auth::id())->first();
 
         if (!$manager) {
-            return redirect()->route('management.dashboard')->with('error', 'Manager profile not found.');
+            return redirect()->back()->with('error', 'Manager profile not found.');
         }
 
         DB::transaction(function () use ($request, $id, $manager) {
@@ -110,18 +139,18 @@ class ManagementController extends Controller
             }
         });
 
-        return redirect()->route('management.dashboard')->with('success', "Booking #{$id} approved.");
+        return redirect()->route('management.dashboard', ['tab' => 'bookings'])->with('success', "Booking #{$id} approved.");
     }
 
     /**
-     * Reject a booking and send notification email.
+     * Reject a booking
      */
     public function reject(Request $request, $id)
     {
         $manager = Manager::where('user_id', Auth::id())->first();
 
         if (!$manager) {
-            return redirect()->route('management.dashboard')->with('error', 'Manager profile not found.');
+            return redirect()->back()->with('error', 'Manager profile not found.');
         }
 
         DB::transaction(function () use ($request, $id, $manager) {
@@ -150,14 +179,10 @@ class ManagementController extends Controller
             }
         });
 
-        return redirect()->route('management.dashboard')->with('success', "Booking #{$id} denied.");
+        return redirect()->route('management.dashboard', ['tab' => 'bookings'])->with('success', "Booking #{$id} denied.");
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | SERVICE ACTIONS
-    |--------------------------------------------------------------------------
-    */
+    /* --- Actions for Offerings --- */
 
     public function storeService(Request $request)
     {
@@ -168,7 +193,7 @@ class ManagementController extends Controller
         ]);
 
         Service::create($validated);
-        return redirect()->back()->with('success', 'New service added successfully!');
+        return redirect()->route('management.dashboard', ['tab' => 'offerings'])->with('success', 'New service added successfully!');
     }
 
     public function updateService(Request $request, $id)
@@ -181,14 +206,8 @@ class ManagementController extends Controller
 
         $service = Service::findOrFail($id);
         $service->update($validated);
-        return redirect()->back()->with('success', 'Service updated successfully!');
+        return redirect()->route('management.dashboard', ['tab' => 'offerings'])->with('success', 'Service updated successfully!');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | EVENT ACTIONS
-    |--------------------------------------------------------------------------
-    */
 
     public function storeEvent(Request $request)
     {
@@ -199,7 +218,7 @@ class ManagementController extends Controller
         ]);
 
         Event::create($validated);
-        return redirect()->back()->with('success', 'New event package created successfully!');
+        return redirect()->route('management.dashboard', ['tab' => 'offerings'])->with('success', 'New event package created successfully!');
     }
 
     public function updateEvent(Request $request, $id)
@@ -212,14 +231,8 @@ class ManagementController extends Controller
 
         $event = Event::findOrFail($id);
         $event->update($validated);
-        return redirect()->back()->with('success', 'Event package updated successfully!');
+        return redirect()->route('management.dashboard', ['tab' => 'offerings'])->with('success', 'Event package updated successfully!');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | PAX ACTIONS
-    |--------------------------------------------------------------------------
-    */
 
     public function storePax(Request $request)
     {
@@ -237,7 +250,7 @@ class ManagementController extends Controller
             'updated_at' => now(),
         ]);
 
-        return redirect()->back()->with('success', 'New pax tier added successfully!');
+        return redirect()->route('management.dashboard', ['tab' => 'offerings'])->with('success', 'New pax tier added successfully!');
     }
 
     public function updatePax(Request $request, $id)
@@ -257,6 +270,6 @@ class ManagementController extends Controller
                 'updated_at' => now(),
             ]);
 
-        return redirect()->back()->with('success', 'Pax tier updated successfully!');
+        return redirect()->route('management.dashboard', ['tab' => 'offerings'])->with('success', 'Pax tier updated successfully!');
     }
 }

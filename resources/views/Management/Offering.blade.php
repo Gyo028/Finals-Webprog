@@ -13,8 +13,6 @@
 
 <div class="mgmt-main-content">
     <div class="mgmt-container">
-        <h1 class="mgmt-title">Gr3atest Offerings</h1>
-
         {{-- Tab Navigation --}}
         <div class="mgmt-tabs">
             <button class="tab-btn active" onclick="switchTab(event, 'events-tab')">Event Packages</button>

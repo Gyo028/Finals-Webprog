@@ -1,6 +1,6 @@
 /* --- LAYOUT & WRAPPER --- */
 .mgmt-wrap {
-    max-width: 1100px;
+    width: 1100px;
     margin: 30px auto 60px;
     padding: 0 18px;
     font-family: Arial, sans-serif;
@@ -25,9 +25,7 @@
     transition: opacity 0.2s;
 }
 
-.mgmt-logout-btn:hover {
-    opacity: .8;
-}
+.mgmt-logout-btn:hover { opacity: .8; }
 
 /* --- HERO SECTION --- */
 .mgmt-hero {
@@ -38,31 +36,13 @@
     margin-bottom: 18px;
 }
 
-.mgmt-hero h1 {
-    margin: 0 0 6px 0;
-    font-size: 26px;
-}
-
-.mgmt-hero p {
-    margin: 0;
-    opacity: .85;
-}
-
-/* --- ALERTS --- */
-.mgmt-alert {
-    background: #d4edda;
-    border: 1px solid #b7e1c1;
-    padding: 10px 12px;
-    border-radius: 10px;
-    margin: 12px 0 18px;
-    color: #155724;
-    font-weight: 600;
-}
+.mgmt-hero h1 { margin: 0 0 6px 0; font-size: 26px; }
+.mgmt-hero p { margin: 0; opacity: .85; }
 
 /* --- STATS CARDS --- */
 .mgmt-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 14px;
     margin-bottom: 20px;
 }
@@ -80,7 +60,6 @@
     font-size: 13px;
     margin-bottom: 8px;
     font-weight: 700;
-    letter-spacing: .2px;
     text-transform: uppercase;
 }
 
@@ -90,14 +69,13 @@
     color: #111;
 }
 
-/* --- SECTION & FILTER HEADER --- */
+/* --- SECTION --- */
 .mgmt-section {
     background: #fff;
     border-radius: 12px;
     padding: 20px;
     box-shadow: 0 10px 26px rgba(0,0,0,.05);
     border: 1px solid #eee;
-    margin-top: 16px;
 }
 
 .mgmt-section-head {
@@ -105,17 +83,9 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 20px;
-    gap: 12px;
-    flex-wrap: wrap;
 }
 
-.mgmt-section h2 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 800;
-}
-
-/* --- SEGMENTED FILTER BUTTONS --- */
+/* --- FILTER BUTTONS --- */
 .mgmt-filter-button-group {
     display: inline-flex;
     background-color: #f1f3f5;
@@ -124,9 +94,7 @@
     border: 1px solid #dee2e6;
 }
 
-.mgmt-filter-button-group input[type="radio"] {
-    display: none;
-}
+.mgmt-filter-button-group input[type="radio"] { display: none; }
 
 .mgmt-filter-button-group label {
     padding: 8px 18px;
@@ -135,62 +103,64 @@
     font-size: 13px;
     font-weight: 800;
     color: #666;
-    transition: all 0.2s ease;
-    margin: 0;
-}
-
-.mgmt-filter-button-group label:hover {
-    background-color: #e9ecef;
-    color: #333;
+    transition: 0.2s ease;
 }
 
 .mgmt-filter-button-group input[type="radio"]:checked + label {
-    background-color: #ffffff;
+    background-color: #fff;
     color: #000;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
-/* --- TABLE STYLES --- */
-.mgmt-table-wrap {
-    overflow-x: auto;
-}
-
-.mgmt-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.mgmt-table th,
-.mgmt-table td {
-    border-bottom: 1px solid #eee;
-    padding: 14px 12px;
-    text-align: left;
-    vertical-align: middle;
-    font-size: 14px;
-}
+/* --- TABLE --- */
+.mgmt-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 
 .mgmt-table th {
     background: #fafafa;
+    font-size: 11px;
+    text-transform: uppercase;
     font-weight: 800;
     color: #444;
-    text-transform: uppercase;
-    font-size: 11px;
-    letter-spacing: 0.5px;
+    padding: 14px 12px;
+    border-bottom: 1px solid #eee;
 }
 
-.mgmt-table tr:hover td {
-    background-color: #fcfcfc;
+.mgmt-table td {
+    border-bottom: 1px solid #f8f8f8;
+    padding: 14px 12px;
+    vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-/* --- BADGES & STATUS --- */
+/* --- BUTTON --- */
+.btn-view-booking {
+    background: #111;
+    color: #fff;
+    border: none;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.btn-view-booking:hover {
+    background: #333;
+    transform: scale(1.05);
+}
+
+/* --- STATUS BADGES --- */
 .mgmt-badge {
-    display: inline-block;
     padding: 5px 12px;
     border-radius: 999px;
     font-weight: 800;
-    font-size: 11px;
-    background: #eee;
-    color: #333;
+    font-size: 10px;
     text-transform: uppercase;
 }
 
@@ -198,88 +168,81 @@
 .mgmt-badge.approved { background: #d4edda; color: #155724; }
 .mgmt-badge.denied { background: #f8d7da; color: #721c24; }
 
-/* --- ACTION BUTTONS --- */
-.mgmt-btn {
-    border: none;
-    padding: 8px 14px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 800;
-    font-size: 13px;
-    transition: transform 0.1s, opacity 0.2s;
-    background: #111;
-    color: #fff;
-}
+/* ========================================================= */
+/* ⭐ FIXED PAGINATION STYLE */
+/* ========================================================= */
 
-.mgmt-btn:hover { opacity: 0.85; }
-.mgmt-btn:active { transform: scale(0.96); }
-
-/* --- PAGINATION STYLES (CLEAN VERSION) --- */
-.mgmt-pagination-wrapper {
+.mgmt-pagination-wrapper,
+#paginationWrapper {
     margin-top: 30px;
     padding-top: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     border-top: 1px solid #f1f1f1;
+    display: flex;
+    justify-content: center;
 }
 
-/* Hide the redundant 'Showing X to Y' and extra text buttons */
-.mgmt-pagination-wrapper nav > div:first-child,
-.mgmt-pagination-wrapper .flex.justify-between.flex-1 {
-    display: none !important;
-}
-
-/* Force the numbered list to be horizontal and centered */
-.mgmt-pagination-wrapper .pagination {
-    display: flex !important;
-    list-style: none !important;
+/* Remove bullets & align horizontally */
+.mgmt-pagination-wrapper .pagination,
+#paginationWrapper .pagination {
+    list-style: none;
+    display: flex;
+    gap: 8px;
     padding: 0;
     margin: 0;
-    gap: 8px;
 }
 
-/* Style the buttons to match your 'View' button theme */
-.mgmt-pagination-wrapper .page-link {
+/* Remove bullets */
+.mgmt-pagination-wrapper .page-item,
+#paginationWrapper .page-item {
+    list-style: none;
+}
+
+/* Pagination button */
+.mgmt-pagination-wrapper .page-link,
+#paginationWrapper .page-link {
+    min-width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 40px;
-    height: 40px;
-    padding: 0 10px;
     background: #fff;
     border: 1px solid #e0e0e0;
     color: #111;
     font-weight: 800;
-    font-size: 14px;
-    text-decoration: none;
     border-radius: 10px;
+    text-decoration: none;
     transition: all 0.2s ease;
 }
 
-.mgmt-pagination-wrapper .page-link:hover {
-    background: #f8f8f8;
+/* Hover */
+.mgmt-pagination-wrapper .page-link:hover,
+#paginationWrapper .page-link:hover {
+    background: #111;
+    color: #fff;
     border-color: #111;
 }
 
-/* Active Page - Black background, white text */
-.mgmt-pagination-wrapper .page-item.active .page-link {
-    background: #111 !important;
-    color: #fff !important;
+/* Active page */
+.mgmt-pagination-wrapper .page-item.active .page-link,
+#paginationWrapper .page-item.active .page-link {
+    background: #111;
+    color: #fff;
     border-color: #111;
 }
 
-/* Disabled state */
-.mgmt-pagination-wrapper .page-item.disabled .page-link {
-    color: #ccc;
-    background: #fafafa;
+/* Disabled */
+.mgmt-pagination-wrapper .page-item.disabled .page-link,
+#paginationWrapper .page-item.disabled .page-link {
+    background: #f5f5f5;
+    color: #bbb;
     border-color: #eee;
-    pointer-events: none;
+    cursor: not-allowed;
 }
 
-/* --- RESPONSIVE --- */
-@media (max-width: 768px) {
-    .mgmt-section-head { flex-direction: column; align-items: flex-start; }
-    .mgmt-filter-button-group { width: 100%; }
-    .mgmt-filter-button-group label { flex: 1; text-align: center; }
-}
+/* ========================================================= */
+
+.empty-state { text-align: center; padding: 60px 0; color: #ccc; }
+
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
