@@ -35,6 +35,7 @@
     letter-spacing: -0.02em; 
 }
 
+/* Labels & Values */
 .detail-label { 
     font-size: 11px; 
     font-weight: 700; 
@@ -50,6 +51,7 @@
     color: #334155; 
 }
 
+/* Layout & Columns */
 .mgmt-modal-flex { display: flex; gap: 30px; align-items: stretch; }
 .mgmt-modal-column { flex: 1; width: 50%; min-width: 0; display: flex; flex-direction: column; }
 .detail-row { display: flex; gap: 12px; width: 100%; }
@@ -65,6 +67,7 @@
     width: 100%; 
 }
 
+/* Highlights */
 .highlight-client { background: #f0f7ff; border-color: #bae6fd; }
 .highlight-client .detail-value { font-size: 18px; font-weight: 700; color: #0369a1; }
 
@@ -72,10 +75,20 @@
 .highlight-services .detail-label { color: #7e22ce; }
 .highlight-services .detail-value { color: #6b21a8; font-weight: 600; }
 
+.highlight-payment {
+    background: #f0fdf4 !important; 
+    border-color: #bbf7d0 !important;
+}
+.highlight-payment .detail-label { color: #15803d; }
+.highlight-payment .detail-value { color: #166534; font-size: 18px; font-weight: 800; }
+
+.detail-row .highlight-client, 
+.detail-row .highlight-payment { flex: 1; }
+
 .detail-address { font-size: 13px; color: #64748b; margin-top: 4px; font-weight: 400; line-height: 1.4; display: block; }
 
+/* Receipt Section */
 .payment-title { font-size: 11px; margin: 0 0 8px 0; color: #64748b; text-transform: uppercase; font-weight: 700; }
-
 .mgmt-receipt-container { 
     width: 100%; 
     flex-grow: 1; 
@@ -88,96 +101,86 @@
     justify-content: center; 
     overflow: hidden; 
 }
-
-.mgmt-receipt-container img { 
-    max-width: 100%; 
-    max-height: 100%; 
-    object-fit: contain; 
-    transition: transform 0.2s; 
-}
-
+.mgmt-receipt-container img { max-width: 100%; max-height: 100%; object-fit: contain; transition: transform 0.2s; }
 .mgmt-receipt-container img:hover { transform: scale(1.02); }
-
 .receipt-hint { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 8px; font-style: italic; }
-
 .no-receipt-box { text-align: center; color: #94a3b8; font-weight: 500; }
 
+/* Admin Notes */
 .mgmt-admin-notes { margin-top: 20px; }
 .mgmt-admin-notes textarea {
     width: 100%; height: 100px; padding: 14px; border: 1px solid #e2e8f0; border-radius: 12px;
     font-family: inherit; font-size: 14px; line-height: 1.6; resize: none; background: #fcfcfc;
 }
 
+/* Styling for Read-Only Notes (Rejected/Cancelled) */
+.mgmt-admin-notes textarea[readonly] {
+    background-color: #f8fafc;
+    color: #64748b;
+    cursor: not-allowed;
+    border-style: dashed;
+}
+
 .mgmt-hr { border: 0; border-top: 1px solid #f1f5f9; margin: 24px 0; }
-.mgmt-modal-footer { display: flex; justify-content: flex-end; gap: 12px; }
 
-.mgmt-btn { padding: 12px 24px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; transition: 0.2s; }
+/* Footer & Buttons */
+.mgmt-modal-footer { 
+    display: flex; 
+    justify-content: flex-end; 
+    gap: 12px; 
+    width: 100%;
+}
+.mgmt-modal-footer form { margin: 0; }
+
+.mgmt-btn { 
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px; 
+    border-radius: 10px; 
+    font-weight: 700; 
+    font-size: 14px; 
+    cursor: pointer; 
+    border: none; 
+    transition: 0.2s;
+    min-width: 140px;
+}
+
 .mgmt-approve { background: #10b981; color: #fff; }
-.mgmt-reject { background: #fff; color: #ef4444; border: 1px solid #fee2e2; }
+.mgmt-approve:hover { background: #059669; }
 
-.mgmt-modal-close { position: absolute; top: 20px; right: 20px; background: #f1f5f9; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center; }
-
-/* LIGHTBOX CSS - Optimized for Maximum Size */
-.receipt-lightbox {
-    position: fixed; 
-    inset: 0; 
-    background: rgba(0, 0, 0, 0.95);
-    backdrop-filter: blur(10px);
-    z-index: 11000; 
-    display: none; 
-    align-items: center; 
-    justify-content: center; 
-    padding: 20px;
-    cursor: zoom-out;
+.mgmt-reject { 
+    background: #ef4444 !important; 
+    color: #ffffff !important; 
 }
+.mgmt-reject:hover { background: #dc2626 !important; }
 
-.receipt-lightbox img { 
-    width: auto;
-    height: auto;
-    max-width: 95vw; 
-    max-height: 95vh; 
-    border-radius: 4px; 
-    box-shadow: 0 0 50px rgba(0,0,0,1);
-    object-fit: contain; 
-    animation: zoomIn 0.3s ease-out;
-}
-
-@keyframes zoomIn {
-    from { transform: scale(0.8); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
-
-.close-lightbox { 
+/* Modal Close */
+.mgmt-modal-close { 
     position: absolute; 
     top: 20px; 
-    right: 30px; 
-    color: rgba(255, 255, 255, 0.7); 
-    font-size: 40px; 
+    right: 20px; 
+    background: #f1f5f9; 
+    border: none; 
+    width: 36px; 
+    height: 36px; 
+    border-radius: 50%; 
     cursor: pointer; 
-    z-index: 11001;
-    transition: 0.2s;
+    color: #64748b; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
 }
 
-.close-lightbox:hover { color: white; }
-
-/* Payment Highlight Styling */
-.highlight-payment {
-    background: #f0fdf4 !important; /* Soft Green */
-    border-color: #bbf7d0 !important;
+/* Lightbox */
+.receipt-lightbox {
+    position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(10px); z-index: 11000; display: none; 
+    align-items: center; justify-content: center; padding: 20px; cursor: zoom-out;
 }
-
-.highlight-payment .detail-label {
-    color: #15803d; /* Forest Green Label */
+.receipt-lightbox img { 
+    max-width: 95vw; max-height: 95vh; border-radius: 4px; 
+    box-shadow: 0 0 50px rgba(0,0,0,1); object-fit: contain; animation: zoomIn 0.3s ease-out;
 }
-
-.highlight-payment .detail-value {
-    color: #166534; /* Dark Green Text */
-    font-size: 18px;
-    font-weight: 800;
-}
-
-/* Ensure the top row fits both Client and Payment */
-.detail-row .highlight-client, 
-.detail-row .highlight-payment {
-    flex: 1;
-}
+@keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.close-lightbox { position: absolute; top: 20px; right: 30px; color: rgba(255, 255, 255, 0.7); font-size: 40px; cursor: pointer; z-index: 11001; }

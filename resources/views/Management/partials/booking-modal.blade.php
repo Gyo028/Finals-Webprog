@@ -77,32 +77,52 @@
 
         <hr class="mgmt-hr">
 
-        <div class="mgmt-admin-notes">
-            <span class="detail-label">📝 Review Notes / Rejection Reason</span>
-            <textarea id="m_admin_notes" placeholder="Add internal notes for approval OR the reason for rejection here..."></textarea>
-        </div>
-        <br>
+    {{-- resources/views/management/partials/booking-modal.blade.php --}}
 
-        {{-- ACTION BUTTONS --}}
-        <div id="action-buttons" class="mgmt-modal-footer">
-            {{-- Approve Form --}}
-            <form id="approveForm" method="POST" onsubmit="return syncNotes('approveForm')" style="margin:0;">
-                @csrf
-                <input type="hidden" name="admin_notes" class="hidden-notes">
-                <button type="submit" class="mgmt-btn mgmt-approve">Approve</button>
-            </form>
+    <div class="mgmt-admin-notes">
+        <span class="detail-label">📝 Review Notes / Rejection or Cancellation Reason</span>
+        {{-- We will toggle 'readonly' on this textarea via JS --}}
+        <textarea id="m_admin_notes" name="admin_notes" placeholder="Add internal notes for approval OR the reason for rejection here..."></textarea>
+    </div>
+    <br>
 
-            {{-- Reject Form --}}
-            <form id="rejectForm" method="POST" onsubmit="return syncNotes('rejectForm')" style="margin:0;">
-                @csrf
-                <input type="hidden" name="reason" class="hidden-notes">
-                <button type="submit" class="mgmt-btn mgmt-reject">Reject</button>
-            </form>
-        </div>
+{{-- ACTION BUTTONS --}}
+<div id="action-buttons" class="mgmt-modal-footer">
+    
+    {{-- Group A: PENDING STATUS (Approve & Reject) --}}
+    <div id="pending-actions" style="display:none; gap: 10px;">
+        <form id="approveForm" method="POST" onsubmit="return syncNotes('approveForm')" style="margin:0;">
+            @csrf
+            <input type="hidden" name="admin_notes" id="approve_remarks">
+            <button type="submit" class="mgmt-btn mgmt-approve">Approve Booking</button>
+        </form>
+
+        <form id="rejectForm" method="POST" onsubmit="return syncNotes('rejectForm')" style="margin:0;">
+            @csrf
+            <input type="hidden" name="reason" id="reject_remarks">
+            <button type="submit" class="mgmt-btn mgmt-reject">Reject Booking</button>
+        </form>
+    </div>
+
+    {{-- Group B: APPROVED STATUS (Cancel) --}}
+    <div id="approved-actions" style="display:none;">
+        <form id="cancelForm" method="POST" onsubmit="return syncNotes('cancelForm')" style="margin:0;">
+            @csrf
+            {{-- Using 'reason' to match your cancel method logic --}}
+            <input type="hidden" name="reason" id="cancel_remarks">
+            <button type="submit" class="mgmt-btn mgmt-reject" style="background-color: #ef4444;">Cancel Booking</button>
+        </form>
+    </div>
+
+    {{-- Group C: REJECTED STATUS (No buttons) --}}
+    <div id="rejected-actions" style="display:none;">
+        <span style="color: #64748b; font-style: italic;">This booking has been rejected and cannot be modified.</span>
     </div>
 </div>
 
-<div id="receiptLightbox" class="receipt-lightbox" onclick="closeLightbox()">
-    <span class="close-lightbox">✕</span>
-    <img id="lightboxImg" src="" alt="Full Receipt">
-</div>
+    {{-- LIGHTBOX --}}
+    <div id="receiptLightbox" class="receipt-lightbox" onclick="closeLightbox()">
+        <span class="close-lightbox">✕</span>
+        <img id="lightboxImg" src="" alt="Full Receipt">
+    </div>
+

@@ -17,7 +17,7 @@ use Carbon\Carbon;
 
 class ManagementController extends Controller
 {
-    /**
+/**
      * Unified Controller Method for the Main Management Page
      */
     public function dashboard(Request $request)
@@ -25,11 +25,15 @@ class ManagementController extends Controller
         $currentTab = $request->query('tab', 'bookings');
         $search = $request->query('search');
         
+        // Updated Stats Logic:
+        // 'payments' now only sums amounts for bookings that are currently 'approved'.
+        // If a booking is moved to 'cancelled' or 'denied', it is automatically deducted.
         $stats = [
-            'pending'  => Booking::where('status', Booking::STATUS_PENDING)->count(),
-            'approved' => Booking::where('status', Booking::STATUS_APPROVED)->count(),
-            'rejected' => Booking::where('status', Booking::STATUS_DENIED)->count(),
-            'payments' => (float) Payment::whereHas('booking', function ($q) {
+            'pending'   => Booking::where('status', Booking::STATUS_PENDING)->count(),
+            'approved'  => Booking::where('status', Booking::STATUS_APPROVED)->count(),
+            'rejected'  => Booking::where('status', Booking::STATUS_DENIED)->count(),
+            'cancelled' => Booking::where('status', Booking::STATUS_CANCELLED)->count(),
+            'payments'  => (float) Payment::whereHas('booking', function ($q) {
                 $q->where('status', Booking::STATUS_APPROVED);
             })->sum('amount'),
         ];
@@ -137,9 +141,14 @@ class ManagementController extends Controller
         $booking = Booking::findOrFail($id);
         $clientName = $booking->client->first_name . ' ' . $booking->client->last_name;
 
-        DB::transaction(function () use ($request, $booking, $manager) {
+        // Check if we are REJECTING a pending booking or CANCELLING an approved one
+        $isCancellation = ($booking->status === Booking::STATUS_APPROVED);
+        $newStatus = $isCancellation ? Booking::STATUS_CANCELLED : Booking::STATUS_DENIED;
+        $statusLabel = $isCancellation ? 'cancelled' : 'denied';
+
+        DB::transaction(function () use ($request, $booking, $manager, $newStatus, $statusLabel) {
             $booking->update([
-                'status'                 => Booking::STATUS_DENIED,
+                'status'                 => $newStatus,
                 'verification_remarks'   => $request->reason, 
                 'verified_by_manager_id' => $manager->manager_id,
                 'verified_at'            => now(),
@@ -151,17 +160,18 @@ class ManagementController extends Controller
                 if ($booking->client?->user?->email) {
                     Mail::to($booking->client->user->email)->send(new MyEmail([
                         'clientName' => $booking->client->first_name . ' ' . $booking->client->last_name,
-                        'status'     => 'denied',
+                        'status'     => $statusLabel, // Will say 'cancelled' or 'denied'
                         'remarks'    => $request->reason,
-                        'bookingId'  => $booking->id
+                        'bookingId'  => $booking->booking_id // Ensure this matches your PK
                     ]));
                 }
             } catch (\Exception $e) {
-                 Log::error("Email failed for rejection {$booking->id}: " . $e->getMessage());
+                \Log::error("Email failed for {$statusLabel} {$booking->booking_id}: " . $e->getMessage());
             }
         });
 
-        return redirect()->to(url()->previous())->with('error', "Booking for {$clientName} rejected.");
+        $msg = $isCancellation ? "Booking for {$clientName} cancelled." : "Booking for {$clientName} rejected.";
+        return redirect()->to(url()->previous())->with('success', $msg);
     }
 
     /**

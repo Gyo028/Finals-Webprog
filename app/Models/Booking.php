@@ -25,6 +25,7 @@ class Booking extends Model
     const STATUS_PENDING  = 'pending';
     const STATUS_APPROVED = 'approved';
     const STATUS_DENIED   = 'denied';
+    const STATUS_CANCELLED = 'cancelled'; // Add this
 
     /**
      * The attributes that are mass assignable.

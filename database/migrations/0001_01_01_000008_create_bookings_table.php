@@ -41,7 +41,6 @@ return new class extends Migration
 
             /**
              * Integrated Verification Fields
-             * These replace the old booking_verifications table
              */
             $table->foreignId('verified_by_manager_id')
                 ->nullable()
@@ -58,9 +57,10 @@ return new class extends Migration
              * draft: Client is still editing/selecting services
              * pending: Submitted by client, awaiting manager review
              * approved: Manager has verified and confirmed the booking
-             * denied: Manager rejected the booking (requires re-booking)
+             * denied: Manager rejected the booking (initial review)
+             * cancelled: An approved booking that was later voided
              */
-            $table->enum('status', ['draft', 'pending', 'approved', 'denied'])
+            $table->enum('status', ['draft', 'pending', 'approved', 'denied', 'cancelled'])
                   ->default('draft');
 
             $table->timestamps();

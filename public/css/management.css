@@ -42,33 +42,53 @@
 /* --- STATS CARDS --- */
 .mgmt-cards {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    /* The first 4 cards get 1 part, the last card gets 2 parts of the width */
+    grid-template-columns: 1fr 1fr 1fr 1fr 2fr; 
     gap: 14px;
     margin-bottom: 20px;
+    align-items: stretch;
 }
 
 .mgmt-card {
     background: #fff;
     border-radius: 12px;
-    padding: 18px;
+    padding: 16px; /* Slightly tighter padding for status cards */
     box-shadow: 0 10px 26px rgba(0,0,0,.05);
     border: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Specifically targeting the larger Payment Card (the last one) */
+.mgmt-cards .mgmt-card:last-child {
+    background: #fcfcfc; /* Subtle hint that this is the primary card */
+    border-color: #e2e8f0;
+    padding: 20px; /* More breathing room for the big number */
 }
 
 .mgmt-card-title {
     color: #666;
-    font-size: 13px;
+    font-size: 11px; /* Reduced from 13px to fit better in smaller status boxes */
     margin-bottom: 8px;
     font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.02em;
 }
 
+/* Values for the smaller status cards */
 .mgmt-card-value {
-    font-size: 26px;
+    font-size: 22px; /* Reduced from 26px for the status counts */
     font-weight: 800;
     color: #111;
 }
 
+/* Value for the double-sized payment card */
+.mgmt-cards .mgmt-card:last-child .mgmt-card-value {
+    font-size: 32px; /* Making the payment amount significantly larger */
+    color: #000;
+    letter-spacing: -0.03em;
+}
 /* --- SECTION --- */
 .mgmt-section {
     background: #fff;

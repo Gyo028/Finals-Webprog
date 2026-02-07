@@ -39,7 +39,6 @@
     background: #fff;
     border-radius: 16px;
     padding: 24px;
-    /* Slightly more pronounced shadow since the background is now white */
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
     border: 1px solid #eaeaea;
 }
@@ -86,7 +85,6 @@
     pointer-events: none;
 }
 
-/* --- CLEAR SEARCH ICON --- */
 .search-clear {
     position: absolute;
     right: 12px;
@@ -187,13 +185,6 @@
     color: #999;
 }
 
-.empty-state i {
-    font-size: 24px;
-    margin-bottom: 10px;
-    display: block;
-    opacity: 0.5;
-}
-
 /* Column Widths */
 .mgmt-main-table th:nth-child(1) { width: 40%; }
 .mgmt-main-table th:nth-child(2) { width: 25%; }
@@ -217,18 +208,26 @@
     font-size: 15px; 
 }
 
-/* --- STATUS BADGES --- */
+/* --- UPDATED STATUS BADGES --- */
 .badge { 
-    padding: 5px 12px; 
-    border-radius: 15px; 
-    font-size: 10px; 
+    padding: 7px 14px;        /* Increased size */
+    border-radius: 8px;       /* Modern squircle shape */
+    font-size: 11px;          /* Slightly larger text */
     font-weight: 800; 
     display: inline-block; 
-    letter-spacing: 0.02em;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
 }
 
 .badge-active { background: #e6f7ee; color: #2ecc71; }
 .badge-inactive { background: #feecef; color: #e74c3c; }
+
+/* New Slate Grey Status */
+.badge-cancelled { 
+    background: #f1f5f9; 
+    color: #64748b; 
+    border: 1px solid #e2e8f0;
+}
 
 /* --- FOOTER & PAGINATION --- */
 .mgmt-card-footer {
@@ -259,7 +258,6 @@
     border-color: #ccc;
 }
 
-/* FIX Pagination Layout */
 .mgmt-pagination .pagination {
     list-style: none;
     display: flex;

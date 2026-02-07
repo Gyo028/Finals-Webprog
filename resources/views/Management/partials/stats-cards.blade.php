@@ -11,9 +11,13 @@
 
     <div class="mgmt-card">
         <div class="mgmt-card-title">Rejected</div>
-        <div class="mgmt-card-value">
-            {{ $stats['rejected'] ?? 0 }}
-        </div>
+        <div class="mgmt-card-value">{{ $stats['rejected'] ?? 0 }}</div>
+    </div>
+
+    {{-- Added Cancelled Card --}}
+    <div class="mgmt-card highlight-cancelled">
+        <div class="mgmt-card-title">Cancelled</div>
+        <div class="mgmt-card-value">{{ $stats['cancelled'] ?? 0 }}</div>
     </div>
 
     <div class="mgmt-card">

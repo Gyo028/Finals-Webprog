@@ -9,7 +9,7 @@
     <div class="mgmt-section">
         <div class="mgmt-section-head" style="display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-bottom: 15px;">
             
-            {{-- ✅ DYNAMIC MODERATE SEARCH FIELD --}}
+            {{-- ✅ DYNAMIC SEARCH FIELD --}}
             <div class="mgmt-search-wrapper" style="flex: 0 1 350px;"> 
                 <div style="position: relative; width: 100%;">
                     <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #888; font-size: 14px;"></i>
@@ -21,7 +21,7 @@
                 </div>
             </div>
 
-            {{-- ✅ FILTER BUTTONS --}}
+            {{-- ✅ FILTER BUTTONS (Updated to include Cancelled) --}}
             <div class="mgmt-card-toolbar">
                 <form method="GET" action="{{ route('management.dashboard') }}" id="filterForm" style="margin: 0;">
                     <input type="hidden" name="tab" value="{{ request('tab', 'bookings') }}">
@@ -37,6 +37,11 @@
                         <input type="radio" name="status" id="status_denied" value="denied" 
                             onchange="this.form.submit()" {{ request('status') == 'denied' ? 'checked' : '' }}>
                         <label for="status_denied">Rejected</label>
+
+                        {{-- NEW CANCELLED FILTER --}}
+                        <input type="radio" name="status" id="status_cancelled" value="cancelled" 
+                            onchange="this.form.submit()" {{ request('status') == 'cancelled' ? 'checked' : '' }}>
+                        <label for="status_cancelled">Cancelled</label>
                     </div>
                 </form>
             </div>
@@ -59,7 +64,6 @@
                         @php $bid = $booking->booking_id ?? $booking->id; @endphp
                         <tr>
                             <td class="text-left">
-                                {{-- Removed the ID small tag from here --}}
                                 <strong>{{ $booking->client->username ?? ($booking->client->first_name . ' ' . $booking->client->last_name) }}</strong>
                             </td>
 
@@ -74,8 +78,15 @@
                             </td>
 
                             <td class="text-center">
+                                {{-- Updated Badge Logic --}}
                                 <span class="mgmt-badge {{ $booking->status }}">
-                                    {{ $booking->status === 'denied' ? 'Rejected' : ucfirst($booking->status) }}
+                                    @if($booking->status === 'denied')
+                                        Rejected
+                                    @elseif($booking->status === 'cancelled')
+                                        Cancelled
+                                    @else
+                                        {{ ucfirst($booking->status) }}
+                                    @endif
                                 </span>
                             </td>
 
@@ -84,6 +95,7 @@
                                     class="btn-view-booking"
                                     onclick="openBookingModal(this)"
                                     data-id="{{ $bid }}"
+                                    data-status="{{ $booking->status }}"
                                     data-client="{{ $booking->client->first_name ?? 'N/A' }} {{ $booking->client->last_name ?? '' }}"
                                     data-event="{{ $booking->event->event_name ?? 'N/A' }}"
                                     data-pax="{{ $booking->pax->pax_description ?? ($booking->pax->pax_count ?? 'N/A') }}"
@@ -126,46 +138,51 @@
 
 <script>
     /**
-     * ✅ SEARCH-AS-YOU-TYPE LOGIC
+     * ✅ AJAX SEARCH & FILTER LOGIC
+     * Updated to handle the new 'cancelled' status radio button.
      */
     const searchInput = document.getElementById('dynamicSearch');
     const tableBody = document.getElementById('bookingsTableBody');
     const paginationWrapper = document.getElementById('paginationWrapper');
+    let debounceTimer;
 
-    searchInput.addEventListener('input', function() {
-        const query = this.value;
-        const status = document.querySelector('input[name="status"]:checked').value;
-        const tab = "{{ request('tab', 'bookings') }}";
-        
-        // Build the URL with the search query
-        const url = new URL(window.location.href);
-        url.searchParams.set('search', query);
-        url.searchParams.set('status', status);
-        url.searchParams.set('tab', tab);
-        url.searchParams.delete('page'); // Always reset to page 1 when searching
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const query = this.value;
 
-        // Update browser URL bar without reload
-        window.history.pushState({}, '', url);
+            debounceTimer = setTimeout(() => {
+                const url = new URL(window.location.href);
+                // Dynamically find whichever radio is checked (Pending, Approved, Rejected, or Cancelled)
+                const status = document.querySelector('input[name="status"]:checked')?.value || 'pending';
+                const tab = url.searchParams.get('tab') || 'bookings';
 
-        // Fetch the full page and extract the table rows
-        fetch(url)
-            .then(response => response.text())
-            .then(data => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(data, 'text/html');
-                
-                // Extract new table body and pagination from the fetched page
-                const newTableBody = doc.getElementById('bookingsTableBody').innerHTML;
-                const newPagination = doc.getElementById('paginationWrapper').innerHTML;
+                url.searchParams.set('search', query);
+                url.searchParams.set('status', status);
+                url.searchParams.set('tab', tab);
+                url.searchParams.delete('page'); // Reset to page 1 on search
 
-                tableBody.innerHTML = newTableBody;
-                paginationWrapper.innerHTML = newPagination;
-            })
-            .catch(error => console.error('Error searching:', error));
-    });
+                window.history.pushState({}, '', url);
+
+                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(response => response.text())
+                    .then(data => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(data, 'text/html');
+                        
+                        const newTable = doc.getElementById('bookingsTableBody');
+                        const newPagination = doc.getElementById('paginationWrapper');
+
+                        if (newTable) tableBody.innerHTML = newTable.innerHTML;
+                        if (newPagination) paginationWrapper.innerHTML = newPagination.innerHTML;
+                    })
+                    .catch(error => console.error('Search Error:', error));
+            }, 400);
+        });
+    }
 
     /**
-     * MODAL & UTILS
+     * ✅ FORMAT TIME
      */
     function formatTo12Hour(timeStr) {
         if (!timeStr || timeStr === 'N/A' || timeStr === 'null') return 'N/A';
@@ -177,27 +194,31 @@
         return `${hours < 10 ? '0'+hours : hours}:${minutes} ${ampm}`;
     }
 
+    /**
+     * ✅ UPDATED MODAL LOGIC 
+     * Handles specific messaging and UI locking for 'cancelled' vs 'denied'.
+     */
     function openBookingModal(btn) {
         const ds = btn.dataset; 
+        const status = ds.status; 
+        const id = ds.id;
+        
+        // 1. Map Basic Information
         document.getElementById('m_client').textContent = ds.client || 'N/A';
         document.getElementById('m_event').textContent  = ds.event || 'N/A';
         document.getElementById('m_pax').textContent    = ds.pax || 'N/A';
-        
-        const totalElem = document.getElementById('m_total');
-        if (totalElem) totalElem.textContent = ds.total || '₱0.00';
-
-        const servicesElem = document.getElementById('m_services');
-        if (servicesElem) servicesElem.textContent = (ds.services && ds.services !== "null") ? ds.services : 'None Selected';
-
+        document.getElementById('m_total').textContent  = ds.total || '₱0.00';
+        document.getElementById('m_services').textContent = (ds.services && ds.services !== "null") ? ds.services : 'None Selected';
         document.getElementById('m_venue').textContent   = ds.venue || 'N/A';
+        
         const addressElem = document.getElementById('m_address');
         if (addressElem) addressElem.textContent = ds.address ? ` — ${ds.address}` : ' — No Address';
 
+        // 2. Handle Date/Time
         const dateElem = document.getElementById('m_date');
-        if (ds.date && ds.date !== 'N/A') {
+        if (ds.date && ds.date !== 'N/A' && ds.date !== "") {
             const d = new Date(ds.date);
-            const month = d.toLocaleString('en-US', { month: 'long' });
-            dateElem.textContent = `${month} ${d.getDate()}, ${d.getFullYear()}`;
+            dateElem.textContent = d.toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
         } else {
             dateElem.textContent = 'N/A';
         }
@@ -206,9 +227,9 @@
         const endTime = formatTo12Hour(ds.endTime);
         document.getElementById('m_time').textContent = (startTime !== 'N/A') ? `${startTime} - ${endTime}` : 'N/A';
 
+        // 3. Receipt Logic
         const img = document.getElementById('m_receipt_img');
         const noRec = document.getElementById('m_no_receipt');
-
         if (ds.receipt && ds.receipt !== "null" && ds.receipt.trim() !== "") {
             img.src = ds.receipt.startsWith('http') ? ds.receipt : `/uploads/receipts/${ds.receipt.replace('uploads/receipts/', '')}`;
             img.style.display = 'block'; 
@@ -218,13 +239,84 @@
             noRec.style.display = 'flex';
         }
 
-        document.getElementById('m_admin_notes').value = (ds.remarks && ds.remarks !== "null") ? ds.remarks : ""; 
-        const id = ds.id;
-        if (id) {
-            document.getElementById('approveForm').action = `/management/approve/${id}`;
-            document.getElementById('rejectForm').action  = `/management/deny/${id}`;
+        // 4. REMARKS & EDITABILITY
+        const notesField = document.getElementById('m_admin_notes');
+        if (notesField) {
+            notesField.value = (ds.remarks && ds.remarks !== "null") ? ds.remarks : ""; 
+            
+            // Lock field if already finalized (Denied or Cancelled)
+            if (status === 'denied' || status === 'rejected' || status === 'cancelled') {
+                notesField.readOnly = true;
+                notesField.style.backgroundColor = '#f8fafc';
+                notesField.style.color = '#64748b';
+                notesField.placeholder = "";
+            } else {
+                notesField.readOnly = false;
+                notesField.style.backgroundColor = '#ffffff';
+                notesField.style.color = '#000000';
+                notesField.placeholder = status === 'approved' ? "Explain the reason for cancellation..." : "Enter admin notes...";
+            }
         }
+
+        // 5. TOGGLE BUTTON GROUPS
+        const pendingActions  = document.getElementById('pending-actions');
+        const approvedActions = document.getElementById('approved-actions');
+        const rejectedActions = document.getElementById('rejected-actions');
+
+        pendingActions.style.display  = 'none';
+        approvedActions.style.display = 'none';
+        rejectedActions.style.display = 'none';
+
+        if (id) {
+            if (status === 'pending') {
+                pendingActions.style.display = 'flex';
+                document.getElementById('approveForm').action = `/management/approve/${id}`;
+                document.getElementById('rejectForm').action  = `/management/deny/${id}`;
+            } 
+            else if (status === 'approved') {
+                approvedActions.style.display = 'block';
+                document.getElementById('cancelForm').action = `/management/deny/${id}`;
+            } 
+            else if (status === 'denied' || status === 'rejected' || status === 'cancelled') {
+                rejectedActions.style.display = 'block';
+                const statusLabel = (status === 'cancelled') ? 'cancelled' : 'rejected';
+                rejectedActions.innerHTML = `<span style="color: #64748b; font-style: italic; font-size: 0.9rem;">
+                    <i class="fa-solid fa-circle-info"></i> This booking has been ${statusLabel} and is no longer editable.
+                </span>`;
+            }
+        }
+
         document.getElementById('bookingModal').style.display = 'flex';
+    }
+
+    /**
+     * ✅ SYNC NOTES FUNCTION
+     */
+    function syncNotes(formId) {
+        const notesValue = document.getElementById('m_admin_notes').value;
+        
+        if (formId === 'approveForm') {
+            document.getElementById('approve_remarks').value = notesValue;
+        } 
+        else if (formId === 'rejectForm') {
+            document.getElementById('reject_remarks').value = notesValue;
+        } 
+        else if (formId === 'cancelForm') {
+            document.getElementById('cancel_remarks').value = notesValue;
+        }
+        
+        return true; 
+    }
+
+    function openLightbox(src) {
+        const lightbox = document.getElementById('receiptLightbox');
+        const img = document.getElementById('lightboxImg');
+        img.src = src;
+        lightbox.style.display = 'flex';
+    }
+
+    function closeLightbox() {
+        document.getElementById('receiptLightbox').style.display = 'none';
     }
 
     function closeBookingModal() {
