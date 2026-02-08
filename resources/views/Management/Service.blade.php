@@ -53,7 +53,7 @@
                         <td class="price-text text-left">₱{{ number_format($service->service_price, 2) }}</td>
                         <td class="text-center">
                             <span class="badge {{ $service->IsActive ? 'badge-active' : 'badge-inactive' }}">
-                                {{ $service->IsActive ? 'ACTIVE' : 'INACTIVE' }}
+                                {{ $service->IsActive ? 'AVAILABLE' : 'UNAVAILABLE' }}
                             </span>
                         </td>
                         <td class="text-right">

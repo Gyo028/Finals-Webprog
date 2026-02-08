@@ -29,13 +29,13 @@
                         <label class="radio-item">
                             <input type="radio" name="IsActive" id="status_active" value="1">
                             <span class="radio-tile">
-                                <i class="fa-solid fa-circle-check"></i> Active
+                                <i class="fa-solid fa-circle-check"></i> Available
                             </span>
                         </label>
                         <label class="radio-item">
                             <input type="radio" name="IsActive" id="status_inactive" value="0">
                             <span class="radio-tile tile-inactive">
-                                <i class="fa-solid fa-circle-xmark"></i> Inactive
+                                <i class="fa-solid fa-circle-xmark"></i> Unavailable
                             </span>
                         </label>
                     </div>

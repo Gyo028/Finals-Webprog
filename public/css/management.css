@@ -187,6 +187,11 @@
 .mgmt-badge.pending { background: #fff3cd; color: #856404; }
 .mgmt-badge.approved { background: #d4edda; color: #155724; }
 .mgmt-badge.denied { background: #f8d7da; color: #721c24; }
+.mgmt-badge.cancelled { 
+    background: #f1f5f9; /* slate-100 */
+    color: #475569;      /* slate-600 */
+    border: 1px solid #cbd5e1; /* slate-300 */
+}
 
 /* --- PROOF OF PAYMENT / MODAL RECEIPT --- */
 .receipt-box {

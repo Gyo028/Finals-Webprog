@@ -53,7 +53,7 @@
                         <td class="price-text text-left">₱{{ number_format($pax->pax_price, 2) }}</td>
                         <td class="text-center">
                             <span class="badge {{ $pax->IsActive ? 'badge-active' : 'badge-inactive' }}">
-                                {{ $pax->IsActive ? 'ACTIVE' : 'INACTIVE' }}
+                                {{ $pax->IsActive ? 'AVAILABLE' : 'UNAVAILABLE' }}
                             </span>
                         </td>
                         <td class="text-right">

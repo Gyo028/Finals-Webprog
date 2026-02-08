@@ -21,11 +21,11 @@
                     <div class="status-radio-group">
                         <label class="radio-item">
                             <input type="radio" name="IsActive" value="1" checked>
-                            <div class="radio-tile">Active</div>
+                            <div class="radio-tile">Available</div>
                         </label>
                         <label class="radio-item">
                             <input type="radio" name="IsActive" value="0">
-                            <div class="radio-tile tile-inactive">Inactive</div>
+                            <div class="radio-tile tile-inactive">Unavailable</div>
                         </label>
                     </div>
                 </div>

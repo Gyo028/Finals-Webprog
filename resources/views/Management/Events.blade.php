@@ -51,7 +51,7 @@
                         
                         <td class="text-center">
                             <span class="badge {{ $event->IsActive ? 'badge-active' : 'badge-inactive' }}">
-                                {{ $event->IsActive ? 'ACTIVE' : 'INACTIVE' }}
+                                {{ $event->IsActive ? 'AVAILABLE' : 'UNAVAILABLE' }}
                             </span>
                         </td>
 

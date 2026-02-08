@@ -28,14 +28,14 @@
                             <input type="radio" name="IsActive" value="1" checked>
                             <div class="radio-tile">
                                 <i class="fa-solid fa-circle-check"></i>
-                                <span>Active</span>
+                                <span>Available</span>
                             </div>
                         </label>
                         <label class="radio-item">
                             <input type="radio" name="IsActive" value="0">
                             <div class="radio-tile tile-inactive">
                                 <i class="fa-solid fa-circle-xmark"></i>
-                                <span>Inactive</span>
+                                <span>Unavailable</span>
                             </div>
                         </label>
                     </div>
