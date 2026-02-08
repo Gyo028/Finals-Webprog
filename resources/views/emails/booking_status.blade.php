@@ -1,24 +1,22 @@
-<!DOCTYPE html>
-<html>
-<body>
+<x-mail::message>
+# Hello {{ $clientName }},
 
-<h2>Hello {{ $clientName }}</h2>
+Your booking status has been updated. Here are your event details:
 
-<p>
-    Your booking has been
-    <strong>{{ ucfirst($status) }}</strong>.
-</p>
+<x-mail::panel>
+**Event Type:** {{ $eventType }}  
+**Event Date:** {{ \Carbon\Carbon::parse($eventDate)->format('F j, Y') }}  
+**Status:** {{ ucfirst($status) }}
+</x-mail::panel>
 
 @if($remarks)
-    <p><strong>Remarks:</strong></p>
-    <p>{{ $remarks }}</p>
+**Manager Remarks:** {{ $remarks }}
 @endif
 
-<br>
-<p>
-    Thank you,<br>
-    Event Management Team
-</p>
+<x-mail::button :url="url('/client/dashboard')">
+View My Dashboard
+</x-mail::button>
 
-</body>
-</html>
+Thank you for choosing us,<br>
+{{ config('app.name') }}
+</x-mail::message>

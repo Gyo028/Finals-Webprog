@@ -95,12 +95,16 @@ class ManagementController extends Controller
     /**
      * Approve a booking
      */
+/**
+     * Approve a booking
+     */
     public function approve(Request $request, $id)
     {
         $manager = Manager::where('user_id', Auth::id())->first();
         if (!$manager) return redirect()->back()->with('error', 'Manager profile not found.');
 
-        $booking = Booking::findOrFail($id);
+        // Load the relations needed for the email
+        $booking = Booking::with(['client.user', 'event'])->findOrFail($id);
         $clientName = $booking->client->first_name . ' ' . $booking->client->last_name;
 
         DB::transaction(function () use ($request, $booking, $manager) {
@@ -117,13 +121,15 @@ class ManagementController extends Controller
                 if ($booking->client?->user?->email) {
                     Mail::to($booking->client->user->email)->send(new MyEmail([
                         'clientName' => $booking->client->first_name . ' ' . $booking->client->last_name,
-                        'status'     => 'approved',
+                        'status'     => 'approved', // Hardcoded here because it's the approve method
                         'remarks'    => $request->admin_notes,
-                        'bookingId'  => $booking->id
+                        'bookingId'  => $booking->booking_id,
+                        'eventDate'  => $booking->booking_date,
+                        'eventType'  => $booking->event->event_name,
                     ]));
                 }
             } catch (\Exception $e) {
-                Log::error("Email failed for booking {$booking->id}: " . $e->getMessage());
+                Log::error("Email failed for booking {$booking->booking_id}: " . $e->getMessage());
             }
         });
 
@@ -160,9 +166,11 @@ class ManagementController extends Controller
                 if ($booking->client?->user?->email) {
                     Mail::to($booking->client->user->email)->send(new MyEmail([
                         'clientName' => $booking->client->first_name . ' ' . $booking->client->last_name,
-                        'status'     => $statusLabel, // Will say 'cancelled' or 'denied'
+                        'status'     => $statusLabel,
                         'remarks'    => $request->reason,
-                        'bookingId'  => $booking->booking_id // Ensure this matches your PK
+                        'bookingId'  => $booking->booking_id,
+                        'eventDate'  => $booking->booking_date, // Pass the date from DB
+                        'eventType'  => $booking->event->event_name, // Pass the event name
                     ]));
                 }
             } catch (\Exception $e) {
@@ -195,10 +203,12 @@ class ManagementController extends Controller
             try {
                 if ($booking->client?->user?->email) {
                     Mail::to($booking->client->user->email)->send(new MyEmail([
-                        'clientName' => $clientName,
-                        'status'     => 'cancelled',
+                        'clientName' => $booking->client->first_name . ' ' . $booking->client->last_name,
+                        'status'     => $statusLabel,
                         'remarks'    => $request->reason,
-                        'bookingId'  => $booking->id
+                        'bookingId'  => $booking->booking_id,
+                        'eventDate'  => $booking->booking_date, // Pass the date from DB
+                        'eventType'  => $booking->event->event_name, // Pass the event name
                     ]));
                 }
             } catch (\Exception $e) {
