@@ -129,6 +129,7 @@
 
 </div>
 
+@include('LandingPage.footer')
 
 <style>
 body {

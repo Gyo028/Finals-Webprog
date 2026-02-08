@@ -109,7 +109,7 @@
             </div>
             <div class="form-group">
                 <label>End Time</label>
-                <input type="time" name="booking_end_time" id="booking_end_time"    >
+                <input type="time" name="booking_end_time" id="booking_end_time">
             </div>
         </div>
 
@@ -394,7 +394,6 @@
 </script>
 
 <style>
-    /* ... Keeping your existing styles ... */
     .booking-container { max-width: 550px; margin: 40px auto; padding: 30px; border-radius: 12px; background: #fff; box-shadow: 0 8px 20px rgba(0,0,0,0.1); font-family: sans-serif; }
     h2 { color: #333; text-align: center; margin-bottom: 25px; }
     .form-group { margin-bottom: 20px; }
