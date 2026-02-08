@@ -13,15 +13,26 @@
     @endif
 
     <form id="bookingForm" action="{{ route('bookings.store') }}" method="POST" enctype="multipart/form-data">
-        @csrf
+    @csrf
+
+    <!-- STEP INDICATOR -->
+    <div class="step-indicator">
+        <div class="step active">1</div>
+        <div class="step">2</div>
+        <div class="step">3</div>
+        <div class="step">4</div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="form-step active">
+        <h3>Step 1: Event & Guests</h3>
 
         <div class="form-group">
             <label for="event_id">What kind of event?</label>
-            <select name="event_id" id="event_id" onchange="updateTotal()">
+            <select name="event_id" id="event_id" onchange="updateTotal()" required>
                 <option value="">-- Choose an Event --</option>
                 @foreach($eventTypes as $event)
-                    <option value="{{ $event->event_id }}" data-price="{{ $event->event_base_price }}"
-                        {{ old('event_id') == $event->event_id ? 'selected' : '' }}>
+                    <option value="{{ $event->event_id }}" data-price="{{ $event->event_base_price }}">
                         {{ $event->event_name }} (₱{{ number_format($event->event_base_price, 2) }})
                     </option>
                 @endforeach
@@ -29,99 +40,110 @@
         </div>
 
         <div class="form-group">
-            <label for="pax_id">Number of Guests (Pax Package)</label>
-            <select name="pax_id" id="pax_id" onchange="updateTotal()">
+            <label for="pax_id">Number of Guests</label>
+            <select name="pax_id" id="pax_id" onchange="updateTotal()" required>
                 <option value="">-- Select Guest Count --</option>
                 @foreach($paxOptions as $pax)
-                    <option value="{{ $pax->pax_id }}" data-price="{{ $pax->pax_price }}"
-                        {{ old('pax_id') == $pax->pax_id ? 'selected' : '' }}>
+                    <option value="{{ $pax->pax_id }}" data-price="{{ $pax->pax_price }}">
                         {{ $pax->pax_count }} Pax (+₱{{ number_format($pax->pax_price, 2) }})
                     </option>
                 @endforeach
             </select>
         </div>
 
+        <div class="step-buttons">
+            <button type="button" class="next-btn" onclick="nextStep()">Next</button>
+        </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="form-step">
+        <h3>Step 2: Venue & Services</h3>
+
         <div class="form-group">
-            <label for="venue_name">Venue Name</label>
-            <input type="text" name="venue_name" id="venue_name" placeholder="e.g., Grand Ballroom"
-                   value="{{ old('venue_name') }}">
+            <label>Venue Name</label>
+            <input type="text" name="venue_name" id="venue_name" required>
         </div>
 
         <div class="form-group" style="position: relative;">
-            <label>Search Venue Address</label>
-            <input type="text"
-                id="address-search"
-                placeholder="Start typing address..."
-                autocomplete="off">
-
+            <label>Venue Address</label>
+            <input type="text" id="address-search" placeholder="Search address..." autocomplete="off">
             <div id="results-list" class="results-list"></div>
-
-            {{-- This is what gets submitted to DB --}}
-            <input type="hidden"
-                name="venue_address"
-                id="final-address"
-                value="{{ old('venue_address') }}">
+            <input type="hidden" name="venue_address" id="final-address" required>
         </div>
 
         <div class="form-group">
-            <label>Select Additional Services</label>
+            <label>Additional Services</label>
             <div class="services-checkbox-group">
                 @foreach($services as $service)
-                    <div class="checkbox-option">
-                        <input type="checkbox" name="service_id[]" id="service_{{ $service->service_id }}" 
-                               value="{{ $service->service_id }}" 
-                               data-price="{{ $service->service_price }}" 
-                               onchange="updateTotal()"
-                               {{ (is_array(old('service_id')) && in_array($service->service_id, old('service_id'))) ? 'checked' : '' }}>
-                        <label for="service_{{ $service->service_id }}">
-                            {{ $service->service_name }} (+₱{{ number_format($service->service_price, 2) }})
-                        </label>
-                    </div>
+                    <label class="checkbox-option">
+                        <input type="checkbox" name="service_id[]" value="{{ $service->service_id }}"
+                            data-price="{{ $service->service_price }}" onchange="updateTotal()">
+                        {{ $service->service_name }} (+₱{{ number_format($service->service_price, 2) }})
+                    </label>
                 @endforeach
             </div>
         </div>
 
-        <div class="form-row">
-            <div class="form-group">
-                <label>Event Date</label>
-                @php
-                    $minDate = now()->addMonth()->format('Y-m-d');
-                @endphp
-                <input type="date" name="event_date" min="{{ $minDate }}" value="{{ old('event_date') }}">
-                <small style="color:#777;">
-                    ⚠ Bookings must be made at least <strong>1 month in advance</strong>.
-                </small>
-            </div>
+        <div class="step-buttons">
+            <button type="button" class="btn-back" onclick="prevStep()">Back</button>
+            <button type="button" class="btn-next" onclick="nextStep()">Next</button>
+        </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="form-step">
+        <h3>Step 3: Date & Time</h3>
+
+        <div class="form-group">
+            <label>Event Date</label>
+            <input type="date" name="event_date" min="{{ now()->addMonth()->format('Y-m-d') }}" required>
         </div>
 
         <div class="form-row">
             <div class="form-group">
                 <label>Start Time</label>
-                <input type="time" name="event_time" id="event_time" value="{{ old('event_time') }}">
+                <input type="time" name="event_time" id="event_time" required>
             </div>
             <div class="form-group">
                 <label>End Time</label>
-                <input type="time" name="booking_end_time" id="booking_end_time" value="{{ old('booking_end_time') }}">
+                <input type="time" name="booking_end_time" id="booking_end_time" required>
             </div>
         </div>
 
-        <div class="form-group" style="border-top: 1px dashed #ddd; padding-top: 20px;">
-            <label for="receipt">Upload Proof of Payment (Receipt)</label>
-            <input type="file" name="receipt" id="receipt" accept="image/*,.pdf">
-            <small style="color: #666;">Optional for Drafts. Required for Submission.</small>
+        <div class="step-buttons">
+            <button type="button" class="btn-back" onclick="prevStep()">Back</button>
+            <button type="button" class="btn-next" onclick="nextStep()">Next</button>
+        </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="form-step">
+        <h3>Step 4: Payment</h3>
+
+        <div class="form-group">
+            <label>Upload Proof of Payment</label>
+            <input type="file" name="receipt" id="receipt" accept="image/*,.pdf" required>
         </div>
 
         <div class="form-group">
-            <label>Estimated Total Price</label>
-            <input type="text" id="display_total" placeholder="₱0.00" readonly class="readonly-input">
-            <input type="hidden" name="total_amount" id="total_amount" value="{{ old('total_amount') }}">
+            <label>Estimated Total</label>
+            <input type="text" id="display_total" readonly class="readonly-input">
+            <input type="hidden" name="total_amount" id="total_amount">
         </div>
 
         <div class="button-row">
             <button type="button" class="draft-btn" onclick="submitDraft()">Save as Draft</button>
             <button type="button" class="submit-btn" onclick="openConfirmation()">Submit Booking</button>
         </div>
+
+        <div class="step-buttons">
+            <button type="button" class="btn-back" onclick="prevStep()">Back</button>
+        </div>
+    </div>
+
     </form>
+
 </div>
 
 <div id="confirmModal" class="modal-overlay">
@@ -280,6 +302,39 @@
         }
     });
 
+    let currentStep = 0;
+    const steps = document.querySelectorAll(".form-step");
+    const indicators = document.querySelectorAll(".step");
+
+    function showStep(index) {
+        steps.forEach((step, i) => {
+            step.classList.toggle("active", i === index);
+            indicators[i].classList.toggle("active", i === index);
+        });
+    }
+
+    function nextStep() {
+        const inputs = steps[currentStep].querySelectorAll("input, select");
+
+        for (let input of inputs) {
+            if (!input.checkValidity()) {
+                input.reportValidity();
+                return;
+            }
+        }
+
+        currentStep++;
+        showStep(currentStep);
+    }
+
+
+    function prevStep() {
+        currentStep--;
+        showStep(currentStep);
+    }
+
+    showStep(currentStep);
+
 </script>
 
 <style>
@@ -364,6 +419,102 @@
 
     .result-item:hover {
         background-color: #e9ecef;
+    }
+
+    .form-step {
+    display: none;
+    animation: fade 0.3s ease-in-out;
+    }
+
+    .form-step.active {
+        display: block;
+    }
+
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+
+    .step {
+        width: 35px;
+        height: 35px;
+        background: #ddd;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 35px;
+        font-weight: bold;
+    }
+
+    .step.active {
+        background: #3498db;
+        color: white;
+    }
+
+    .step-buttons {
+        display: flex;
+        gap: 12px;
+        margin-top: 25px;
+    }
+
+    .next-btn {
+        width: 100%;
+        padding: 14px;
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: bold;
+    }
+
+    @keyframes fade {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .btn-back,
+    .btn-next {
+        flex: 1;
+        padding: 14px 18px;
+        border-radius: 10px;
+        border: none;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .btn-back {
+        background: #f1f5f9;
+        color: #334155;
+        border: 1px solid #e2e8f0;
+    }
+
+    .btn-back:hover {
+        background: #e2e8f0;
+        transform: translateX(-2px);
+    }
+
+    .btn-next {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: white;
+        box-shadow: 0 6px 14px rgba(52, 152, 219, 0.25);
+    }
+
+    .btn-next:hover {
+        background: linear-gradient(135deg, #2980b9, #1f6fb2);
+        transform: translateX(2px);
+        box-shadow: 0 8px 18px rgba(52, 152, 219, 0.35);
+    }
+
+    @media (max-width: 480px) {
+        .step-buttons {
+            flex-direction: column;
+        }
     }
 
 </style>
