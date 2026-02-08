@@ -202,108 +202,128 @@
  * Unified Modal Logic 
  * Handles data mapping, UI locking, and mandatory remarks validation.
  */
-    function openBookingModal(btn) {
-        const ds = btn.dataset; 
-        const status = ds.status; 
-        const id = ds.id;
-        
-        // 1. Map Basic Information
-        document.getElementById('m_client').textContent = ds.client || 'N/A';
-        document.getElementById('m_event').textContent  = ds.event || 'N/A';
-        document.getElementById('m_pax').textContent    = ds.pax || 'N/A';
-        document.getElementById('m_total').textContent  = ds.total || '₱0.00';
-        document.getElementById('m_services').textContent = (ds.services && ds.services !== "null") ? ds.services : 'None Selected';
-        document.getElementById('m_venue').textContent   = ds.venue || 'N/A';
-        
-        const addressElem = document.getElementById('m_address');
-        if (addressElem) addressElem.textContent = ds.address ? ` — ${ds.address}` : ' — No Address';
+/**
+ * Unified Modal Logic 
+ * Handles data mapping, UI locking, mandatory remarks, and map redirection.
+ */
+function openBookingModal(btn) {
+    const ds = btn.dataset; 
+    const status = ds.status; 
+    const id = ds.id;
+    
+    // 1. Map Basic Information
+    document.getElementById('m_client').textContent = ds.client || 'N/A';
+    document.getElementById('m_event').textContent  = ds.event || 'N/A';
+    document.getElementById('m_pax').textContent    = ds.pax || 'N/A';
+    document.getElementById('m_total').textContent  = ds.total || '₱0.00';
+    document.getElementById('m_services').textContent = (ds.services && ds.services !== "null") ? ds.services : 'None Selected';
+    
+    // --- MAP REDIRECTION LOGIC START ---
+    const venueName = ds.venue || 'N/A';
+    const venueAddress = ds.address || '';
+    const venueElem = document.getElementById('m_venue');
+    const addressElem = document.getElementById('m_address');
+    const mapLink = document.getElementById('m_map_link');
 
-        // 2. Handle Date/Time
-        const dateElem = document.getElementById('m_date');
-        if (ds.date && ds.date !== 'N/A' && ds.date !== "") {
-            const d = new Date(ds.date);
-            dateElem.textContent = d.toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    venueElem.textContent = venueName;
+    if (addressElem) addressElem.textContent = venueAddress ? ` — ${venueAddress}` : ' — No Address';
+
+    if (mapLink) {
+        if (venueAddress || (venueName && venueName !== 'N/A')) {
+            // Encode the name and address for a safe Google Maps URL
+            const query = encodeURIComponent(`${venueName} ${venueAddress}`);
+            mapLink.href = `https://www.google.com/maps/search/?api=1&query=${query}`;
+            mapLink.style.pointerEvents = 'auto'; 
+            mapLink.title = "Click to view location on Google Maps";
         } else {
-            dateElem.textContent = 'N/A';
+            mapLink.href = '#';
+            mapLink.style.pointerEvents = 'none'; // Disable link if no data
         }
-
-        const startTime = formatTo12Hour(ds.startTime);
-        const endTime = formatTo12Hour(ds.endTime);
-        document.getElementById('m_time').textContent = (startTime !== 'N/A') ? `${startTime} - ${endTime}` : 'N/A';
-
-        // 3. Receipt Logic
-        const img = document.getElementById('m_receipt_img');
-        const noRec = document.getElementById('m_no_receipt');
-        if (ds.receipt && ds.receipt !== "null" && ds.receipt.trim() !== "") {
-            img.src = ds.receipt.startsWith('http') ? ds.receipt : `/uploads/receipts/${ds.receipt.replace('uploads/receipts/', '')}`;
-            img.style.display = 'block'; 
-            noRec.style.display = 'none';
-        } else {
-            img.style.display = 'none'; 
-            noRec.style.display = 'flex';
-        }
-
-        // 4. REMARKS, EDITABILITY & VALIDATION UI
-        const notesField = document.getElementById('m_admin_notes');
-        const star = document.getElementById('remarks-required-star');
-
-        if (notesField) {
-            notesField.value = (ds.remarks && ds.remarks !== "null") ? ds.remarks : ""; 
-            
-            // Reset validation styles from previous opens
-            notesField.style.border = "1px solid #e2e8f0";
-            notesField.style.backgroundColor = "#ffffff";
-            notesField.style.color = '#000000';
-
-            // Lock field if already finalized (Denied or Cancelled)
-            if (status === 'denied' || status === 'rejected' || status === 'cancelled') {
-                notesField.readOnly = true;
-                notesField.style.backgroundColor = '#f8fafc';
-                notesField.style.color = '#64748b';
-                notesField.placeholder = "";
-                if (star) star.style.display = 'none';
-            } else {
-                notesField.readOnly = false;
-                
-                // Show red asterisk: Required for rejection/cancellation
-                if (star) star.style.display = 'inline';
-
-                notesField.placeholder = (status === 'approved') 
-                    ? "Reason for cancellation (Required)..." 
-                    : "Enter notes (Required for rejection)...";
-            }
-        }
-
-        // 5. TOGGLE BUTTON GROUPS
-        const pendingActions  = document.getElementById('pending-actions');
-        const approvedActions = document.getElementById('approved-actions');
-        const rejectedActions = document.getElementById('rejected-actions');
-
-        pendingActions.style.display  = 'none';
-        approvedActions.style.display = 'none';
-        rejectedActions.style.display = 'none';
-
-        if (id) {
-            if (status === 'pending') {
-                pendingActions.style.display = 'flex';
-                document.getElementById('approveForm').action = `/management/approve/${id}`;
-                document.getElementById('rejectForm').action  = `/management/deny/${id}`;
-            } 
-            else if (status === 'approved') {
-                approvedActions.style.display = 'block';
-                document.getElementById('cancelForm').action = `/management/deny/${id}`;
-            } 
-            else if (status === 'denied' || status === 'rejected' || status === 'cancelled') {
-                rejectedActions.style.display = 'block';
-                const statusLabel = (status === 'cancelled') ? 'cancelled' : 'rejected';
-                rejectedActions.innerHTML = `<span style="color: #64748b; font-style: italic; font-size: 0.9rem;">
-                    <i class="fa-solid fa-circle-info"></i> This booking has been ${statusLabel} and is no longer editable.
-                </span>`;
-            }
-        }
-
-        document.getElementById('bookingModal').style.display = 'flex';
     }
+    // --- MAP REDIRECTION LOGIC END ---
+
+    // 2. Handle Date/Time
+    const dateElem = document.getElementById('m_date');
+    if (ds.date && ds.date !== 'N/A' && ds.date !== "") {
+        const d = new Date(ds.date);
+        dateElem.textContent = d.toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    } else {
+        dateElem.textContent = 'N/A';
+    }
+
+    const startTime = formatTo12Hour(ds.startTime);
+    const endTime = formatTo12Hour(ds.endTime);
+    document.getElementById('m_time').textContent = (startTime !== 'N/A') ? `${startTime} - ${endTime}` : 'N/A';
+
+    // 3. Receipt Logic
+    const img = document.getElementById('m_receipt_img');
+    const noRec = document.getElementById('m_no_receipt');
+    if (ds.receipt && ds.receipt !== "null" && ds.receipt.trim() !== "") {
+        img.src = ds.receipt.startsWith('http') ? ds.receipt : `/uploads/receipts/${ds.receipt.replace('uploads/receipts/', '')}`;
+        img.style.display = 'block'; 
+        noRec.style.display = 'none';
+    } else {
+        img.style.display = 'none'; 
+        noRec.style.display = 'flex';
+    }
+
+    // 4. REMARKS, EDITABILITY & VALIDATION UI
+    const notesField = document.getElementById('m_admin_notes');
+    const star = document.getElementById('remarks-required-star');
+
+    if (notesField) {
+        notesField.value = (ds.remarks && ds.remarks !== "null") ? ds.remarks : ""; 
+        
+        notesField.style.border = "1px solid #e2e8f0";
+        notesField.style.backgroundColor = "#ffffff";
+        notesField.style.color = '#000000';
+
+        if (status === 'denied' || status === 'rejected' || status === 'cancelled') {
+            notesField.readOnly = true;
+            notesField.style.backgroundColor = '#f8fafc';
+            notesField.style.color = '#64748b';
+            notesField.placeholder = "";
+            if (star) star.style.display = 'none';
+        } else {
+            notesField.readOnly = false;
+            if (star) star.style.display = 'inline';
+
+            notesField.placeholder = (status === 'approved') 
+                ? "Reason for cancellation (Required)..." 
+                : "Enter notes (Required for rejection)...";
+        }
+    }
+
+    // 5. TOGGLE BUTTON GROUPS
+    const pendingActions  = document.getElementById('pending-actions');
+    const approvedActions = document.getElementById('approved-actions');
+    const rejectedActions = document.getElementById('rejected-actions');
+
+    pendingActions.style.display  = 'none';
+    approvedActions.style.display = 'none';
+    rejectedActions.style.display = 'none';
+
+    if (id) {
+        if (status === 'pending') {
+            pendingActions.style.display = 'flex';
+            document.getElementById('approveForm').action = `/management/approve/${id}`;
+            document.getElementById('rejectForm').action  = `/management/deny/${id}`;
+        } 
+        else if (status === 'approved') {
+            approvedActions.style.display = 'block';
+            document.getElementById('cancelForm').action = `/management/deny/${id}`;
+        } 
+        else if (status === 'denied' || status === 'rejected' || status === 'cancelled') {
+            rejectedActions.style.display = 'block';
+            const statusLabel = (status === 'cancelled') ? 'cancelled' : 'rejected';
+            rejectedActions.innerHTML = `<span style="color: #64748b; font-style: italic; font-size: 0.9rem;">
+                <i class="fa-solid fa-circle-info"></i> This booking has been ${statusLabel} and is no longer editable.
+            </span>`;
+        }
+    }
+
+    document.getElementById('bookingModal').style.display = 'flex';
+}
     /**
      * ✅ SYNC NOTES FUNCTION
      */

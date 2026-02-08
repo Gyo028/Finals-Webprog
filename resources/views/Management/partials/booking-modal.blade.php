@@ -36,8 +36,11 @@
 
                 <div class="detail-item">
                     <span class="detail-label">📍 Venue & Address</span>
-                    <span id="m_venue" class="detail-value" style="color: #0f172a; font-weight: 700;"></span>
-                    <span id="m_address" class="detail-address"></span>
+                    {{-- Wrap the venue and address in a clickable link --}}
+                    <a id="m_map_link" href="#" target="_blank" style="text-decoration: none; display: block;">
+                        <span id="m_venue" class="detail-value" style="color: #0f172a; font-weight: 700; cursor: pointer;"></span>
+                        <span id="m_address" class="detail-address" style="cursor: pointer;"></span>
+                    </a>
                 </div>
 
                 <div class="detail-row">
