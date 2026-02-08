@@ -216,6 +216,11 @@ Route::middleware(['auth'])->group(function () {
         return $controller->validateStep($request);
     })->name('bookings.validateStep');
 
+    Route::post('/bookings/validate-step4', [BookingController::class, 'validateStep4'])
+    ->name('bookings.validateStep4')
+    ->middleware('auth');
+
+
 /*
 |--------------------------------------------------------------------------
 | Debug / Test Routes

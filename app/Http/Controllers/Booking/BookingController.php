@@ -462,4 +462,29 @@ class BookingController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function validateStep4(Request $request)
+    {
+        $user = Auth::user();
+
+        $validator = Validator::make($request->all(), [
+            'receipt' => 'required|mimes:jpg,jpeg,png,pdf|max:2048',
+            'booking_end_time' => 'required',
+            'total_amount' => 'required|numeric|min:0.01',
+        ], [
+            'receipt.required' => 'Please upload your proof of payment.',
+            'receipt.mimes' => 'Please upload your proof of payment.',
+            'receipt.max' => 'The receipt file must be smaller than 2MB.',
+            'booking_end_time.required' => 'Please select an end time.',
+            'total_amount.required' => 'Total amount could not be calculated.',
+            'total_amount.min' => 'Total amount must be greater than zero.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+
 }

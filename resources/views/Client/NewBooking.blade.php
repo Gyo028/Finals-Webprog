@@ -200,25 +200,54 @@
     const form = document.getElementById('bookingForm');
     const modal = document.getElementById('confirmModal');
 
-    function openConfirmation() {
-        const event = document.getElementById('event_id').options[document.getElementById('event_id').selectedIndex].text;
-        const pax = document.getElementById('pax_id').options[document.getElementById('pax_id').selectedIndex].text;
-        const venue = document.getElementById('venue_name').value;
-        const date = document.querySelector('input[name="event_date"]').value;
-        const startTime = document.getElementById('event_time').value;
-        const endTime = document.getElementById('booking_end_time').value;
-        const total = document.getElementById('display_total').value;
+    async function openConfirmation() {
+        // Prepare form data for step 4 validation
+        const step4Data = new FormData();
+        step4Data.append('receipt', document.getElementById('receipt').files[0]);
+        step4Data.append('booking_end_time', document.getElementById('booking_end_time').value);
+        step4Data.append('total_amount', document.getElementById('total_amount').value);
 
-        document.getElementById('modalSummary').innerHTML = `
-            <p><strong>Event:</strong> ${event}</p>
-            <p><strong>Guests:</strong> ${pax}</p>
-            <p><strong>Venue:</strong> ${venue}</p>
-            <p><strong>Date:</strong> ${date}</p>
-            <p><strong>Duration:</strong> ${startTime} - ${endTime}</p>
-            <p class="total-highlight"><strong>Total: ${total}</strong></p>
-        `;
-        modal.style.display = 'flex';
+        try {
+            const response = await fetch("{{ route('bookings.validateStep4') }}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: step4Data
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                showErrors(result.errors); // show errors on Step 4
+                return;
+            }
+
+            // Validation passed → open modal
+            const event = document.getElementById('event_id').options[document.getElementById('event_id').selectedIndex].text;
+            const pax = document.getElementById('pax_id').options[document.getElementById('pax_id').selectedIndex].text;
+            const venue = document.getElementById('venue_name').value;
+            const date = document.querySelector('input[name="event_date"]').value;
+            const startTime = document.getElementById('event_time').value;
+            const endTime = document.getElementById('booking_end_time').value;
+            const total = document.getElementById('display_total').value;
+
+            document.getElementById('modalSummary').innerHTML = `
+                <p><strong>Event:</strong> ${event}</p>
+                <p><strong>Guests:</strong> ${pax}</p>
+                <p><strong>Venue:</strong> ${venue}</p>
+                <p><strong>Date:</strong> ${date}</p>
+                <p><strong>Duration:</strong> ${startTime} - ${endTime}</p>
+                <p class="total-highlight"><strong>Total: ${total}</strong></p>
+            `;
+            modal.style.display = 'flex';
+
+        } catch (error) {
+            console.error(error);
+            alert("Something went wrong while validating your payment. Please try again.");
+        }
     }
+
 
     function closeConfirmation() {
         modal.style.display = 'none';
