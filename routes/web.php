@@ -186,19 +186,35 @@ Route::middleware(['auth'])->group(function () {
         return app(BookingController::class)->create($request);
     })->name('bookings.new');
 
-    Route::post('/booking/store', function (Request $request) {
-        if (!session('google_verified') && !Auth::user()->email_verified_at) return redirect()->route('verification.notice');
-        return app(BookingController::class)->store($request);
+    Route::post('/booking/store', function (Request $request, BookingController $controller) {
+        if (!session('google_verified') && !Auth::user()->email_verified_at) {
+            return redirect()->route('verification.notice');
+        }
+    
+        return $controller->store($request);
     })->name('bookings.store');
-
-    Route::post('/bookings/draft', function (Request $request) {
-        if (!session('google_verified') && !Auth::user()->email_verified_at) return redirect()->route('verification.notice');
-        return app(BookingController::class)->draft($request);
+    
+    Route::post('/bookings/draft', function (Request $request, BookingController $controller) {
+        if (!session('google_verified') && !Auth::user()->email_verified_at) {
+            return redirect()->route('verification.notice');
+        }
+    
+        return $controller->draft($request);
     })->name('bookings.draft');
 
     Route::get('/booking/{id}/edit', [BookingController::class, 'edit'])->name('bookings.edit');
     Route::put('/booking/{id}', [BookingController::class, 'update'])->name('bookings.update');
-});
+    });
+
+    Route::post('/bookings/validate-step', function (Request $request, BookingController $controller) {
+        if (!session('google_verified') && !Auth::user()->email_verified_at) {
+            return response()->json([
+                'errors' => ['auth' => ['Email verification required']]
+            ], 403);
+        }
+
+        return $controller->validateStep($request);
+    })->name('bookings.validateStep');
 
 /*
 |--------------------------------------------------------------------------

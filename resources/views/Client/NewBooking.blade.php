@@ -2,6 +2,8 @@
     <h2>Book a New Event</h2>
     <a href="{{ route('dashboard') }}" class="back-btn">← Back to Dashboard</a>
 
+    <div id="serverErrors" class="error-box" style="display:none;"></div>
+
     @if ($errors->any())
         <div class="error-box">
             <ul>
@@ -29,7 +31,7 @@
 
         <div class="form-group">
             <label for="event_id">What kind of event?</label>
-            <select name="event_id" id="event_id" onchange="updateTotal()" required>
+            <select name="event_id" id="event_id" onchange="updateTotal()">
                 <option value="">-- Choose an Event --</option>
                 @foreach($eventTypes as $event)
                     <option value="{{ $event->event_id }}" data-price="{{ $event->event_base_price }}">
@@ -41,7 +43,7 @@
 
         <div class="form-group">
             <label for="pax_id">Number of Guests</label>
-            <select name="pax_id" id="pax_id" onchange="updateTotal()" required>
+            <select name="pax_id" id="pax_id" onchange="updateTotal()">
                 <option value="">-- Select Guest Count --</option>
                 @foreach($paxOptions as $pax)
                     <option value="{{ $pax->pax_id }}" data-price="{{ $pax->pax_price }}">
@@ -62,14 +64,14 @@
 
         <div class="form-group">
             <label>Venue Name</label>
-            <input type="text" name="venue_name" id="venue_name" required>
+            <input type="text" name="venue_name" id="venue_name">
         </div>
 
         <div class="form-group" style="position: relative;">
             <label>Venue Address</label>
             <input type="text" id="address-search" placeholder="Search address..." autocomplete="off">
             <div id="results-list" class="results-list"></div>
-            <input type="hidden" name="venue_address" id="final-address" required>
+            <input type="hidden" name="venue_address" id="final-address">
         </div>
 
         <div class="form-group">
@@ -97,17 +99,17 @@
 
         <div class="form-group">
             <label>Event Date</label>
-            <input type="date" name="event_date" min="{{ now()->addMonth()->format('Y-m-d') }}" required>
+            <input type="date" name="event_date" min="{{ now()->addMonth()->format('Y-m-d') }}">
         </div>
 
         <div class="form-row">
             <div class="form-group">
                 <label>Start Time</label>
-                <input type="time" name="event_time" id="event_time" required>
+                <input type="time" name="event_time" id="event_time">
             </div>
             <div class="form-group">
                 <label>End Time</label>
-                <input type="time" name="booking_end_time" id="booking_end_time" required>
+                <input type="time" name="booking_end_time" id="booking_end_time"    >
             </div>
         </div>
 
@@ -123,7 +125,7 @@
 
         <div class="form-group">
             <label>Upload Proof of Payment</label>
-            <input type="file" name="receipt" id="receipt" accept="image/*,.pdf" required>
+            <input type="file" name="receipt" id="receipt" accept="image/*,.pdf">
         </div>
 
         <div class="form-group">
@@ -199,15 +201,6 @@
     const modal = document.getElementById('confirmModal');
 
     function openConfirmation() {
-        if (!form.checkValidity()) {
-            form.reportValidity();
-            return;
-        }
-
-        if (!isDateAtLeastOneMonth()) {
-            return;
-        }
-
         const event = document.getElementById('event_id').options[document.getElementById('event_id').selectedIndex].text;
         const pax = document.getElementById('pax_id').options[document.getElementById('pax_id').selectedIndex].text;
         const venue = document.getElementById('venue_name').value;
@@ -313,27 +306,61 @@
         });
     }
 
-    function nextStep() {
-        const inputs = steps[currentStep].querySelectorAll("input, select");
+    async function nextStep() {
+        const stepData = new FormData(form);
+        stepData.append('step', currentStep);
 
-        for (let input of inputs) {
-            if (!input.checkValidity()) {
-                input.reportValidity();
-                return;
-            }
+        const response = await fetch("{{ route('bookings.validateStep') }}", {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: stepData
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            showErrors(result.errors);
+            return;
         }
 
+        clearErrors();
         currentStep++;
         showStep(currentStep);
     }
 
-
     function prevStep() {
+        clearErrors();
         currentStep--;
         showStep(currentStep);
     }
 
     showStep(currentStep);
+
+    function showErrors(errors) {
+        const box = document.getElementById('serverErrors');
+
+        box.innerHTML = `
+            <ul>
+                ${Object.values(errors)
+                    .flat()
+                    .map(msg => `<li>${msg}</li>`)
+                    .join('')}
+            </ul>
+        `;
+
+        box.style.display = 'block';
+
+        // scroll user to errors (nice UX)
+        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function clearErrors() {
+        const box = document.getElementById('serverErrors');
+        box.innerHTML = '';
+        box.style.display = 'none';
+    }
 
 </script>
 
@@ -465,6 +492,7 @@
         border: none;
         border-radius: 6px;
         font-weight: bold;
+        cursor: pointer;
     }
 
     @keyframes fade {

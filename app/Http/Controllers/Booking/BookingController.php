@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator;
 
 class BookingController extends Controller
 {
@@ -92,7 +93,7 @@ class BookingController extends Controller
             'event_time'       => 'required',
             'booking_end_time' => 'required',
             'total_amount'     => 'required|numeric',
-            'receipt'          => 'required|image|max:2048',
+            'receipt'          => 'required|mimes:jpg,jpeg,png,pdf|max:2048',
         ], [
             'venue_address.required' => 'Please select an address from the suggestions.',
             'receipt.required'       => 'Please upload your proof of payment.',
@@ -208,15 +209,15 @@ class BookingController extends Controller
 
         // VALIDATION for draft
         $request->validate([
-            'event_id'        => 'required|integer',
-            'pax_id'          => 'required|integer',
-            'venue_name'      => 'required|string',
-            'venue_address'   => 'required|string',
-            'event_date'      => 'required|date',
-            'event_time'      => 'required',
-            'booking_end_time'=> 'required',
+            'event_id'        => 'nullable|integer',
+            'pax_id'          => 'nullable|integer',
+            'venue_name'      => 'nullable|string',
+            'venue_address'   => 'nullable|string',
+            'event_date'      => 'nullable|date',
+            'event_time'      => 'nullable',
+            'booking_end_time'=> 'nullable',
             'total_amount'    => 'nullable|numeric',
-            'receipt'         => 'nullable|image|max:2048', // optional for draft
+            'receipt'         => 'nullable|mimes:jpg,jpeg,png,pdf|max:2048', // optional for draft
         ], [
             'event_id.required'       => 'Please select an event type.',
             'pax_id.required'         => 'Please select number of guests.',
@@ -326,7 +327,22 @@ class BookingController extends Controller
             $rules['booking_end_time'] = 'required';
         }
 
-        $validatedData = $request->validate($rules);
+        $validatedData = $request->validate($rules, [
+            'event_id.required'         => 'Please choose an event.',
+            'event_id.integer'          => 'Selected event is invalid.',
+            'pax_id.required'           => 'Please select number of guests.',
+            'pax_id.integer'            => 'Selected guest count is invalid.',
+            'venue_name.required'       => 'Please enter the venue name.',
+            'venue_address.required'    => 'Please select an address from the suggestions.',
+            'event_date.required'       => 'Please select the event date.',
+            'event_date.date'           => 'The event date must be valid.',
+            'event_time.required'       => 'Please select the start time.',
+            'booking_end_time.required' => 'Please select the end time.',
+            'total_amount.required'     => 'Total amount could not be calculated.',
+            'receipt.required'          => 'Please upload your proof of payment.',
+            'receipt.mimes'             => 'The receipt must be jpg, jpeg, png, or pdf.',
+            'receipt.max'               => 'The receipt file must be smaller than 2MB.',
+        ]);
 
         DB::transaction(function () use ($request, $booking, $id, $isDraft) {
             // Update venue
@@ -393,6 +409,57 @@ class BookingController extends Controller
 
         $message = $isDraft ? 'Draft updated successfully!' : 'Booking updated and submitted!';
         return redirect()->route('client.dashboard')->with('success', $message);
+    }
+
+    public function validateStep(Request $request)
+    {
+        $step = $request->input('step');
+
+        $rules = match ((int)$step) {
+            0 => [
+                'event_id' => ['required', 'exists:events,event_id'],
+                'pax_id'   => ['required', 'exists:paxes,pax_id'],
+            ],
+            1 => [
+                'venue_name'    => ['required', 'string', 'max:255'],
+                'venue_address' => ['required', 'string'],
+            ],
+            2 => [
+                'event_date'        => ['required', 'date', 'after:today'],
+                'event_time'        => ['required'],
+                'booking_end_time'  => ['required',],
+            ],
+            3 => [
+                'receipt' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf'],
+            ],
+            default => []
+        };
+
+        $messages = [
+            'event_id.required'       => 'Please choose an event.',
+            'event_id.exists'         => 'Selected event is invalid.',
+            'pax_id.required'         => 'Please choose number of guests.',
+            'pax_id.exists'           => 'Selected guest count is invalid.',
+            'venue_name.required'     => 'Please enter the venue name.',
+            'venue_address.required'  => 'Please select an address from the suggestions.',
+            'event_date.required'     => 'Please select the event date.',
+            'event_date.date'         => 'The event date must be a valid date.',
+            'event_time.required'     => 'Please select a start time.',
+            'booking_end_time.required'=> 'Please select an end time.',
+            'receipt.required'        => 'Please upload your proof of payment.',
+            'receipt.file'            => 'The receipt must be a valid file.',
+            'receipt.mimes'           => 'The receipt must be a jpg, jpeg, png, or pdf.',
+        ];
+
+        $validator = Validator::make($request->all(), $rules, $messages);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        return response()->json(['success' => true]);
     }
 
 }
