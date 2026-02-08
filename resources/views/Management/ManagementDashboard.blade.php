@@ -198,6 +198,10 @@
      * ✅ UPDATED MODAL LOGIC 
      * Handles specific messaging and UI locking for 'cancelled' vs 'denied'.
      */
+/**
+ * Unified Modal Logic 
+ * Handles data mapping, UI locking, and mandatory remarks validation.
+ */
     function openBookingModal(btn) {
         const ds = btn.dataset; 
         const status = ds.status; 
@@ -239,22 +243,34 @@
             noRec.style.display = 'flex';
         }
 
-        // 4. REMARKS & EDITABILITY
+        // 4. REMARKS, EDITABILITY & VALIDATION UI
         const notesField = document.getElementById('m_admin_notes');
+        const star = document.getElementById('remarks-required-star');
+
         if (notesField) {
             notesField.value = (ds.remarks && ds.remarks !== "null") ? ds.remarks : ""; 
             
+            // Reset validation styles from previous opens
+            notesField.style.border = "1px solid #e2e8f0";
+            notesField.style.backgroundColor = "#ffffff";
+            notesField.style.color = '#000000';
+
             // Lock field if already finalized (Denied or Cancelled)
             if (status === 'denied' || status === 'rejected' || status === 'cancelled') {
                 notesField.readOnly = true;
                 notesField.style.backgroundColor = '#f8fafc';
                 notesField.style.color = '#64748b';
                 notesField.placeholder = "";
+                if (star) star.style.display = 'none';
             } else {
                 notesField.readOnly = false;
-                notesField.style.backgroundColor = '#ffffff';
-                notesField.style.color = '#000000';
-                notesField.placeholder = status === 'approved' ? "Explain the reason for cancellation..." : "Enter admin notes...";
+                
+                // Show red asterisk: Required for rejection/cancellation
+                if (star) star.style.display = 'inline';
+
+                notesField.placeholder = (status === 'approved') 
+                    ? "Reason for cancellation (Required)..." 
+                    : "Enter notes (Required for rejection)...";
             }
         }
 
@@ -288,13 +304,34 @@
 
         document.getElementById('bookingModal').style.display = 'flex';
     }
-
     /**
      * ✅ SYNC NOTES FUNCTION
      */
     function syncNotes(formId) {
-        const notesValue = document.getElementById('m_admin_notes').value;
+        const notesField = document.getElementById('m_admin_notes');
+        const notesValue = notesField.value.trim();
         
+        // Check if the action is a Rejection or Cancellation
+        const isBlockingAction = (formId === 'rejectForm' || formId === 'cancelForm');
+
+        if (isBlockingAction && notesValue === "") {
+            // 1. Alert the user
+            alert("Action Required: Please provide a reason for the rejection or cancellation in the notes field.");
+            
+            // 2. Focus and highlight the field
+            notesField.focus();
+            notesField.style.border = "2px solid #ef4444";
+            notesField.style.backgroundColor = "#fef2f2";
+            
+            // 3. Prevent form submission
+            return false; 
+        }
+
+        // Reset styles if validation passes
+        notesField.style.border = "1px solid #e2e8f0";
+        notesField.style.backgroundColor = "#ffffff";
+
+        // Sync values to hidden inputs
         if (formId === 'approveForm') {
             document.getElementById('approve_remarks').value = notesValue;
         } 

@@ -145,6 +145,7 @@ class ManagementController extends Controller
         if (!$manager) return redirect()->back()->with('error', 'Manager profile not found.');
 
         $booking = Booking::findOrFail($id);
+        // Load the relations needed for the email
         $clientName = $booking->client->first_name . ' ' . $booking->client->last_name;
 
         // Check if we are REJECTING a pending booking or CANCELLING an approved one

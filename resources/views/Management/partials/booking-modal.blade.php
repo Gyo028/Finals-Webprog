@@ -79,11 +79,13 @@
 
     {{-- resources/views/management/partials/booking-modal.blade.php --}}
 
-    <div class="mgmt-admin-notes">
-        <span class="detail-label">📝 Review Notes / Rejection or Cancellation Reason</span>
-        {{-- We will toggle 'readonly' on this textarea via JS --}}
-        <textarea id="m_admin_notes" name="admin_notes" placeholder="Add internal notes for approval OR the reason for rejection here..."></textarea>
-    </div>
+        <div class="mgmt-admin-notes">
+            <span class="detail-label">
+                📝 Review Notes / Rejection or Cancellation Reason 
+                <span id="remarks-required-star" style="color: #ef4444; display: none;">*</span>
+            </span>
+            <textarea id="m_admin_notes" name="admin_notes" placeholder="Add internal notes for approval OR the reason for rejection here..."></textarea>
+        </div>
     <br>
 
 {{-- ACTION BUTTONS --}}
