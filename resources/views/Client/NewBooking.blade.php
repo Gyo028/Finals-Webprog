@@ -17,7 +17,7 @@
 
         <div class="form-group">
             <label for="event_id">What kind of event?</label>
-            <select name="event_id" id="event_id" required onchange="updateTotal()">
+            <select name="event_id" id="event_id" onchange="updateTotal()">
                 <option value="">-- Choose an Event --</option>
                 @foreach($eventTypes as $event)
                     <option value="{{ $event->event_id }}" data-price="{{ $event->event_base_price }}"
@@ -30,7 +30,7 @@
 
         <div class="form-group">
             <label for="pax_id">Number of Guests (Pax Package)</label>
-            <select name="pax_id" id="pax_id" required onchange="updateTotal()">
+            <select name="pax_id" id="pax_id" onchange="updateTotal()">
                 <option value="">-- Select Guest Count --</option>
                 @foreach($paxOptions as $pax)
                     <option value="{{ $pax->pax_id }}" data-price="{{ $pax->pax_price }}"
@@ -43,7 +43,7 @@
 
         <div class="form-group">
             <label for="venue_name">Venue Name</label>
-            <input type="text" name="venue_name" id="venue_name" placeholder="e.g., Grand Ballroom" required
+            <input type="text" name="venue_name" id="venue_name" placeholder="e.g., Grand Ballroom"
                    value="{{ old('venue_name') }}">
         </div>
 
@@ -52,8 +52,7 @@
             <input type="text"
                 id="address-search"
                 placeholder="Start typing address..."
-                autocomplete="off"
-                required>
+                autocomplete="off">
 
             <div id="results-list" class="results-list"></div>
 
@@ -61,8 +60,7 @@
             <input type="hidden"
                 name="venue_address"
                 id="final-address"
-                value="{{ old('venue_address') }}"
-                required>
+                value="{{ old('venue_address') }}">
         </div>
 
         <div class="form-group">
@@ -89,7 +87,7 @@
                 @php
                     $minDate = now()->addMonth()->format('Y-m-d');
                 @endphp
-                <input type="date" name="event_date" required min="{{ $minDate }}" value="{{ old('event_date') }}">
+                <input type="date" name="event_date" min="{{ $minDate }}" value="{{ old('event_date') }}">
                 <small style="color:#777;">
                     ⚠ Bookings must be made at least <strong>1 month in advance</strong>.
                 </small>
@@ -99,11 +97,11 @@
         <div class="form-row">
             <div class="form-group">
                 <label>Start Time</label>
-                <input type="time" name="event_time" id="event_time" required value="{{ old('event_time') }}">
+                <input type="time" name="event_time" id="event_time" value="{{ old('event_time') }}">
             </div>
             <div class="form-group">
                 <label>End Time</label>
-                <input type="time" name="booking_end_time" id="booking_end_time" required value="{{ old('booking_end_time') }}">
+                <input type="time" name="booking_end_time" id="booking_end_time" value="{{ old('booking_end_time') }}">
             </div>
         </div>
 

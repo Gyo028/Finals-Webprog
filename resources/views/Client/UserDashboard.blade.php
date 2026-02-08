@@ -394,10 +394,10 @@ body {
     const hero = document.getElementById('hero');
 
     const images = [
-        "{{ asset('images/birthday.jpg') }}",
-        "{{ asset('images/wedding.jpg') }}",
-        "{{ asset('images/meet.jpg') }}",
-        "{{ asset('images/dining.jpg') }}"
+        "{{ asset('images/event1.jpeg') }}",
+        "{{ asset('images/event2.jpg') }}",
+        "{{ asset('images/event3.jpg') }}",
+        "{{ asset('images/wedding.jpg') }}"
     ];
 
     let index = 0;
