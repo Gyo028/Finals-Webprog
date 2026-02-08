@@ -23,7 +23,7 @@
         {{-- EVENT --}}
         <div class="form-group">
             <label>What kind of event?</label>
-            <select name="event_id" id="event_id" required onchange="updateTotal()">
+            <select name="event_id" id="event_id" onchange="updateTotal()">
                 <option value="">-- Choose an Event --</option>
                 @foreach($eventTypes as $event)
                     <option value="{{ $event->event_id }}"
@@ -38,7 +38,7 @@
         {{-- PAX --}}
         <div class="form-group">
             <label>Number of Guests (Pax Package)</label>
-            <select name="pax_id" id="pax_id" required onchange="updateTotal()">
+            <select name="pax_id" id="pax_id" onchange="updateTotal()">
                 <option value="">-- Select Guest Count --</option>
                 @foreach($paxOptions as $pax)
                     <option value="{{ $pax->pax_id }}"
@@ -54,20 +54,20 @@
         <div class="form-group">
             <label>Venue Name</label>
             <input type="text" name="venue_name"
-                   value="{{ $booking->venue_name }}" required>
+                   value="{{ $booking->venue_name }}">
         </div>
 
         <div class="form-group">
             <label>Venue Address</label>
             <input type="text" name="venue_address"
-                   value="{{ $booking->venue_address }}" required>
+                   value="{{ $booking->venue_address }}">
         </div>
 
         {{-- DATE --}}
         <div class="form-group">
             <label>Event Date</label>
             <input type="date" name="event_date"
-                   value="{{ $booking->booking_date }}" required>
+                   value="{{ $booking->booking_date }}">
         </div>
 
         {{-- TIME --}}
@@ -75,12 +75,12 @@
             <div class="form-group">
                 <label>Start Time</label>
                 <input type="time" name="event_time"
-                       value="{{ $booking->booking_start_time }}" required>
+                       value="{{ $booking->booking_start_time }}">
             </div>
             <div class="form-group">
                 <label>End Time</label>
                 <input type="time" name="booking_end_time"
-                       value="{{ $booking->booking_end_time }}" required>
+                       value="{{ $booking->booking_end_time }}">
             </div>
         </div>
 

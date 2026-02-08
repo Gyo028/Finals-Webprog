@@ -359,7 +359,7 @@ class BookingController extends Controller
                 $fileName = 'receipt_' . time() . '.' . $request->file('receipt')->getClientOriginalExtension();
                 $request->file('receipt')->move(public_path('uploads/receipts'), $fileName);
 
-                //$updateData['receipt'] = 'uploads/receipts/' . $fileName;
+                $updateData['receipt'] = 'uploads/receipts/' . $fileName;
 
                 if (!$isDraft) {
                     DB::table('payments')->insert([
