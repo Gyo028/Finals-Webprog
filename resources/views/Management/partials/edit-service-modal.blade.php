@@ -1,3 +1,8 @@
+{{-- 
+    Provides an interface for updating existing add-on services (e.g., Catering, 
+    Photography, Music) within the management system.
+--}}
+
 <div class="mgmt-modal" id="editServiceModal">
     <div class="mgmt-modal-backdrop" onclick="closeEditServiceModal()"></div>
     <div class="mgmt-modal-content">

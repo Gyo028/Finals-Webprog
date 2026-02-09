@@ -1,10 +1,12 @@
-{{-- Redundant CSS/Asset links removed (handled by Offering.blade.php) --}}
+{{-- 
+    This modal is used to create and add new number of guest (pax) counts to the system. 
+--}}
+
 
 <div class="mgmt-card">
     {{-- Toolbar --}}
     <div class="mgmt-card-toolbar">
         <div class="toolbar-left">
-            {{-- FIXED: Form action changed to management.offerings --}}
             <form action="{{ route('management.dashboard') }}" method="GET" id="searchFormPax" class="mgmt-search-wrapper">
 
                 <input type="hidden" name="tab" value="offerings">
@@ -87,72 +89,4 @@
     </div>
 </div>
 
-{{-- Modals removed from here (moved to Offering.blade.php bottom) --}}
-
-<script>
-    /** SEARCH LOGIC (Specific to Pax Tab) **/
-    const searchInputPax = document.getElementById('searchInputPax');
-    const searchFormPax = document.getElementById('searchFormPax');
-    let searchTimerPax;
-
-    if (searchInputPax) {
-        searchInputPax.addEventListener('input', () => {
-            clearTimeout(searchTimerPax);
-            searchTimerPax = setTimeout(() => { searchFormPax.submit(); }, 500);
-        });
-
-        // Maintain cursor position after reload
-        const val = searchInputPax.value;
-        searchInputPax.value = ''; 
-        searchInputPax.value = val; 
-        if(document.activeElement.id === 'searchInputPax') searchInputPax.focus();
-    }
-
-    /** * OPEN ADD MODAL **/
-    function openAddPaxModal() {
-        const modal = document.getElementById('addPaxModal');
-        if(modal) {
-            modal.classList.add('is-active');
-            document.body.style.overflow = 'hidden';
-        }
-    }
-
-    function closeAddPaxModal() {
-        const modal = document.getElementById('addPaxModal');
-        if(modal) {
-            modal.classList.remove('is-active');
-            document.body.style.overflow = '';
-        }
-    }
-
-    /** * OPEN EDIT MODAL **/
-    function openEditPaxModal(pax) {
-        const modal = document.getElementById('editPaxModal');
-        const form = document.getElementById('editPaxForm');
-        
-        if (!modal || !form) return;
-
-        // Matches Route::put('/pax/{id}')
-        form.action = `/management/pax/${pax.pax_id}`;
-        
-        document.getElementById('edit_pax_count').value = pax.pax_count;
-        document.getElementById('edit_pax_price').value = pax.pax_price;
-        
-        if (pax.IsActive == 1) {
-            document.getElementById('edit_status_active').checked = true;
-        } else {
-            document.getElementById('edit_status_inactive').checked = true;
-        }
-        
-        modal.classList.add('is-active');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeEditPaxModal() {
-        const modal = document.getElementById('editPaxModal');
-        if(modal) {
-            modal.classList.remove('is-active');
-            document.body.style.overflow = '';
-        }
-    }
-</script>
+<script src="{{ asset('js/management/pax-management.js') }}"></script>

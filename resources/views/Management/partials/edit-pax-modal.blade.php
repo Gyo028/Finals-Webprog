@@ -1,3 +1,8 @@
+{{-- 
+    Used to update existing guest capacity tiers (Pax Count) and their 
+    associated pricing adjustments in the system.
+--}}
+
 <div class="mgmt-modal" id="editPaxModal">
     <div class="mgmt-modal-backdrop" onclick="closeEditPaxModal()"></div>
     <div class="mgmt-modal-content">

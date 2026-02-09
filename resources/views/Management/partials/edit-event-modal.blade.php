@@ -1,3 +1,9 @@
+{{-- 
+    Allows administrators to modify existing event package details (Name, 
+    Price, and Status).
+--}}
+
+
 <div id="editEventModal" class="mgmt-modal">
     <div class="mgmt-modal-backdrop" onclick="closeEditEventModal()"></div>
     <div class="mgmt-modal-content">

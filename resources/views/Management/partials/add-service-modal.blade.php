@@ -1,3 +1,9 @@
+{{-- 
+    This modal is used to create and add new Service add-ons to the system. 
+    It includes input fields for the service name, the price per unit/service, 
+    and its availability status. 
+--}}
+
 <div class="mgmt-modal" id="addServiceModal">
     <div class="mgmt-modal-backdrop" onclick="closeAddServiceModal()"></div>
     <div class="mgmt-modal-content">

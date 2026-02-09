@@ -1,4 +1,17 @@
-{{-- resources/views/management/partials/booking-modal.blade.php --}}
+{{-- 
+    Provides a detailed view of a specific booking. 
+    Allows staff to review client info, event details, venue location, 
+    and proof of payment (with lightbox expansion).
+
+    Key Features:
+    1. Dynamic Status Handling: Shows different action buttons (Approve, 
+       Reject, Cancel) based on the current booking status.
+    2. Admin Notes: A centralized textarea for remarks or 
+       rejection reasons.
+    3. Note Syncing: Uses 'syncNotes()' to ensure the textarea content 
+       is passed into the hidden inputs of the specific action forms.
+    4. Receipt Preview: Displays an uploaded image or a placeholder if empty.
+--}}
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ asset('css/booking-mgmt.css') }}">
@@ -36,7 +49,7 @@
 
                 <div class="detail-item">
                     <span class="detail-label">📍 Venue & Address</span>
-                    {{-- Wrap the venue and address in a clickable link --}}
+                    {{-- Wrap the venue and address in a clickable link to redirect in google maps --}}
                     <a id="m_map_link" href="#" target="_blank" style="text-decoration: none; display: block;">
                         <span id="m_venue" class="detail-value" style="color: #0f172a; font-weight: 700; cursor: pointer;"></span>
                         <span id="m_address" class="detail-address" style="cursor: pointer;"></span>
@@ -80,8 +93,6 @@
 
         <hr class="mgmt-hr">
 
-    {{-- resources/views/management/partials/booking-modal.blade.php --}}
-
         <div class="mgmt-admin-notes">
             <span class="detail-label">
                 📝 Review Notes / Rejection or Cancellation Reason 
@@ -94,7 +105,7 @@
 {{-- ACTION BUTTONS --}}
 <div id="action-buttons" class="mgmt-modal-footer">
     
-    {{-- Group A: PENDING STATUS (Approve & Reject) --}}
+    {{-- PENDING STATUS (Approve & Reject) --}}
     <div id="pending-actions" style="display:none; gap: 10px;">
         <form id="approveForm" method="POST" onsubmit="return syncNotes('approveForm')" style="margin:0;">
             @csrf
@@ -109,7 +120,7 @@
         </form>
     </div>
 
-    {{-- Group B: APPROVED STATUS (Cancel) --}}
+    {{-- APPROVED STATUS (Cancel) --}}
     <div id="approved-actions" style="display:none;">
         <form id="cancelForm" method="POST" onsubmit="return syncNotes('cancelForm')" style="margin:0;">
             @csrf
@@ -119,7 +130,7 @@
         </form>
     </div>
 
-    {{-- Group C: REJECTED STATUS (No buttons) --}}
+    {{-- REJECTED STATUS (No buttons) --}}
     <div id="rejected-actions" style="display:none;">
         <span style="color: #64748b; font-style: italic;">This booking has been rejected and cannot be modified.</span>
     </div>

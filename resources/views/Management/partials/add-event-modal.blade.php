@@ -1,3 +1,8 @@
+{{-- 
+    This modal is used to create and add new event packages to the system. 
+    It includes input fields for the package name, base price, and initial availability status. 
+--}}
+
 <div id="addEventModal" class="mgmt-modal">
     <div class="mgmt-modal-backdrop" onclick="closeAddEventModal()"></div>
     <div class="mgmt-modal-content">
@@ -8,7 +13,10 @@
             </button>
         </div>
         
-        <form action="{{ route('management.event.store') }}" method="POST">
+        {{-- CSRF generates a hidden input field containing a unique token.
+        Laravel compares the token in the request with the token stored in the user's session.
+        If they don't match, the request is rejected. --}}
+        <form action="{{ route('management.event.store') }}" method="POST">     
             @csrf
             <div class="mgmt-modal-body">
                 <div class="mgmt-form-group">

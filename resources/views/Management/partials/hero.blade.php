@@ -1,9 +1,16 @@
+{{-- 
+    Acts as the primary dashboard header, providing a high-level overview 
+    and the main navigation toggle for the management area.
+--}}
+
 <div class="mgmt-hero-card" style="background: #111; color: white; padding: 40px; border-radius: 15px;">
     <h1>Management Panel</h1>
     <p>Switch between managing your active bookings and your service pricing.</p>
     
     <div class="hero-tabs" style="margin-top: 20px; display: flex; gap: 20px;">
-        {{-- TAB 1: BOOKINGS --}}
+        {{-- BOOKINGS TAB --}}
+        {{-- Route Parameterization: Passes a query string (['tab' => '...']) 
+        to the dashboard route to filter content without needing separate pages--}}
         <a href="{{ route('management.dashboard', ['tab' => 'bookings']) }}" 
            style="color: {{ request('tab', 'bookings') == 'bookings' ? '#fff' : '#888' }}; 
                   text-decoration: none; 
@@ -14,7 +21,7 @@
            <i class="fa-solid fa-calendar-days" style="margin-right: 8px;"></i>Bookings
         </a>
 
-        {{-- TAB 2: OFFERINGS --}}
+        {{-- OFFERINGS TAB --}}
         <a href="{{ route('management.dashboard', ['tab' => 'offerings']) }}" 
            style="color: {{ request('tab') == 'offerings' ? '#fff' : '#888' }}; 
                   text-decoration: none; 

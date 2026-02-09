@@ -1,3 +1,8 @@
+{{-- 
+    Displays a real-time summary of booking counts and financial performance 
+    at the top of the dashboard.
+--}}
+
 <div class="mgmt-cards">
     <div class="mgmt-card">
         <div class="mgmt-card-title">Pending</div>

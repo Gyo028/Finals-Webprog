@@ -1,3 +1,9 @@
+{{-- 
+    This modal is used to create and add new Pax (Capacity) options to the system. 
+    It includes input fields for the Pax range name (e.g., "50-100 Guests"), 
+    the additional price for that capacity, and its availability status. 
+--}}
+
 <div class="mgmt-modal" id="addPaxModal">
     <div class="mgmt-modal-backdrop" onclick="closeAddPaxModal()"></div>
     <div class="mgmt-modal-content">

@@ -1,3 +1,7 @@
+{{-- 
+    Logout function.
+--}}
+
 <div class="mgmt-top-actions">
     <form action="{{ route('logout') }}" method="POST">
         @csrf

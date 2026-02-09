@@ -149,7 +149,6 @@ Route::middleware(['auth'])->group(function () {
         // Main Entry point (Handles both tabs via query params)
         Route::get('/dashboard', [ManagementController::class, 'dashboard'])->name('dashboard');
         
-        // ❌ FIXED: Re-added this name to prevent the RouteNotFound error in your Blade
         // It simply points to the same dashboard method.
         Route::get('/offerings', [ManagementController::class, 'dashboard'])->name('offerings');
 
