@@ -1,3 +1,9 @@
+<div
+    id="calendarData"
+    data-approved="{{ implode(',', $approvedDates ?? []) }}"
+    data-pending="{{ implode(',', $pendingDates ?? []) }}">
+</div>
+
 <div class="booking-selection-wrapper">
 
     <!-- CALENDAR -->
@@ -18,8 +24,10 @@
         <div id="calendarGrid" class="calendar-grid"></div>
 
         <div class="legend">
-            <span class="legend-dot"></span>
+            <span class="legend-dot" style="background:#ef4444;"></span>
             <strong>Booked</strong>
+            <span class="legend-dot" style="background:#facc15; margin-left:10px;"></span>
+            <strong>Pending</strong>
         </div>
     </div>
 
@@ -30,8 +38,6 @@
         </h3>
 
         <div id="timeGrid" class="time-grid"></div>
-
-        <button id="submitBooking" disabled>Confirm Selection</button>
     </div>
 </div>
 
@@ -177,23 +183,13 @@
     border-color:#7096d1;
 }
 
-/* Button */
-#submitBooking{
-    margin-top:20px;
-    width:100%;
-    padding:12px;
-    border:none;
-    border-radius:8px;
-    font-weight:700;
-    background:#cbd5e1;
-    color:#fff;
-    cursor:not-allowed;
+.calendar-day.pending {
+    background: #facc15; /* yellow */
+    color: #000;
+    font-weight: 700;
+    cursor: not-allowed;
 }
 
-#submitBooking.active{
-    background:#7096d1;
-    cursor:pointer;
-}
 </style>
 
 <script>
@@ -210,10 +206,15 @@ let selectedDate = null;
 let selectedTime = null;
 
 // 🔴 BOOKED DATES (YYYY-MM-DD, LOCAL)
-const bookedDates = [
-    '2026-03-15',
-    '2026-03-22'
-];
+const calendarData = document.getElementById('calendarData');
+
+const approvedDates = calendarData.dataset.approved
+    ? calendarData.dataset.approved.split(',')
+    : [];
+
+const pendingDates = calendarData.dataset.pending
+    ? calendarData.dataset.pending.split(',')
+    : [];
 
 // ===== HELPERS =====
 function toDateStringLocal(date){
@@ -256,8 +257,11 @@ function renderCalendar(){
         if(dateObj < bookingStartDate){
             el.classList.add('disabled');
         }
-        else if(bookedDates.includes(dateStr)){
-            el.classList.add('booked','disabled');
+        else if(approvedDates.includes(dateStr)){
+            el.classList.add('booked','disabled'); // 🔴 red for approved
+        }
+        else if(pendingDates.includes(dateStr)){
+            el.classList.add('pending','disabled'); // 🟡 yellow for pending (only own user)
         }
         else{
             el.onclick = () => selectDate(el, dateStr);
@@ -289,18 +293,21 @@ function selectDate(el, dateStr){
             year:'numeric'
         });
 
-    updateButton();
+    updateSelection();
 }
 
 // ===== TIME SLOTS =====
-function renderTimeSlots(){
+function renderTimeSlots() {
     const grid = document.getElementById('timeGrid');
     grid.innerHTML = '';
 
-    // 8:00 AM → 9:00 PM (last slot ends 5:00 AM)
-    for(let h = 8; h <= 21; h++){
+    // 8:00 AM (8) to 9:00 PM (21)
+    for (let h = 8; h <= 21; h++) {
         const start = formatTime(h);
-        const end = (h === 21) ? '5:00 AM' : formatTime(h + 8);
+        
+        // Calculate end hour: (Current Hour + 8) wrap at 24
+        const endHour = (h + 8) % 24; 
+        const end = formatTime(endHour);
 
         const box = document.createElement('div');
         box.className = 'time-box';
@@ -309,10 +316,9 @@ function renderTimeSlots(){
         box.onclick = () => {
             document.querySelectorAll('.time-box')
                 .forEach(b => b.classList.remove('selected'));
-
             box.classList.add('selected');
             selectedTime = box.textContent;
-            updateButton();
+            updateSelection();
         };
 
         grid.appendChild(box);
@@ -320,26 +326,42 @@ function renderTimeSlots(){
 }
 
 // ===== TIME FORMAT =====
-function formatTime(hour){
-    const h = hour % 12 || 12;
-    const ampm = hour < 12 ? 'AM' : 'PM';
-    return `${h}:00 ${ampm}`;
+function formatTime(hour) {
+    const period = hour >= 12 ? 'PM' : 'AM';
+    let h = hour % 12;
+    h = h === 0 ? 12 : h; // Convert 0 to 12 for 12:00 AM
+    return `${h}:00 ${period}`;
 }
 
 // ===== BUTTON =====
-function updateButton(){
-    const btn = document.getElementById('submitBooking');
+function updateSelection(){
+    const eventDateInput = document.getElementById('event_date');
+    const startTimeInput = document.getElementById('event_time');
+    const endTimeInput = document.getElementById('booking_end_time');
 
-    if(selectedDate && selectedTime){
-        btn.disabled = false;
-        btn.classList.add('active');
+    if(!selectedDate || !selectedTime){
+        if(eventDateInput) eventDateInput.value = '';
+        if(startTimeInput) startTimeInput.value = '';
+        if(endTimeInput) endTimeInput.value = '';
+        return;
     }
-}
 
-// ===== MONTH NAV =====
-function changeMonth(step){
-    viewDate.setMonth(viewDate.getMonth() + step);
-    renderCalendar();
+    // Split start & end
+    let [start, end] = selectedTime.split(' - ');
+
+    // Convert AM/PM to 24-hour format
+    const convertTo24Hour = t => {
+        const [time, modifier] = t.split(' ');
+        let [hours, minutes] = time.split(':');
+        hours = parseInt(hours, 10);
+        if(modifier === 'PM' && hours < 12) hours += 12;
+        if(modifier === 'AM' && hours === 12) hours = 0;
+        return `${hours.toString().padStart(2,'0')}:${minutes}`;
+    };
+
+    if(startTimeInput) startTimeInput.value = convertTo24Hour(start);
+    if(endTimeInput) endTimeInput.value = convertTo24Hour(end);
+    if(eventDateInput) eventDateInput.value = selectedDate;
 }
 
 // ===== INIT =====

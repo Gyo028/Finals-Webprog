@@ -99,17 +99,16 @@
 
         <div class="form-group">
             <label>Event Date</label>
-            <input type="date" name="event_date" min="{{ now()->addMonth()->format('Y-m-d') }}">
+            @include('Client.time-selection')
+            <input type="date" name="event_date" id="event_date" hidden>
         </div>
 
         <div class="form-row">
             <div class="form-group">
-                <label>Start Time</label>
-                <input type="time" name="event_time" id="event_time">
+                <input type="time" name="event_time" id="event_time" hidden>
             </div>
             <div class="form-group">
-                <label>End Time</label>
-                <input type="time" name="booking_end_time" id="booking_end_time">
+                <input type="time" name="booking_end_time" id="booking_end_time" hidden>
             </div>
         </div>
 
@@ -123,13 +122,37 @@
     <div class="form-step">
         <h3>Step 4: Payment</h3>
 
+        <!-- PAYMENT INSTRUCTIONS WITH ICONS -->
+        <div class="payment-instructions">
+            <h4>How to Pay:</h4>
+            <ul>
+                <li>
+                    <span class="icon">💳</span>
+                    Use your online banking app to transfer the total.
+                </li>
+                <li>
+                    <span class="icon">📸</span>
+                    Take a screenshot or download the payment receipt.
+                </li>
+                <li>
+                    <span class="icon">📁</span>
+                    Upload the receipt using the field below.
+                </li>
+            </ul>
+            <p class="note"><strong>Note:</strong> Only image files (JPG, PNG) or PDF are accepted.</p>
+        </div>
+
+        <!-- CUSTOM FILE INPUT -->
         <div class="form-group">
-            <label>Upload Proof of Payment</label>
-            <input type="file" name="receipt" id="receipt" accept="image/*,.pdf">
+            <label for="receipt">Upload Proof of Payment</label>
+            <div class="custom-file-input">
+                <input type="file" name="receipt" id="receipt" accept="image/*,.pdf">
+                <span class="file-label">Choose file</span>
+            </div>
         </div>
 
         <div class="form-group">
-            <label>Estimated Total</label>
+            <label>Total</label>
             <input type="text" id="display_total" readonly class="readonly-input">
             <input type="hidden" name="total_amount" id="total_amount">
         </div>
@@ -143,6 +166,8 @@
             <button type="button" class="btn-back" onclick="prevStep()">Back</button>
         </div>
     </div>
+
+
 
     </form>
 
@@ -391,37 +416,298 @@
         box.style.display = 'none';
     }
 
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('receipt');
+        const fileLabel = document.querySelector('.custom-file-input .file-label');
+
+        fileInput.addEventListener('change', function() {
+            const fileName = this.files[0] ? this.files[0].name : 'Choose file';
+            fileLabel.textContent = fileName;
+        });
+    });
+
 </script>
 
 <style>
-    .booking-container { max-width: 550px; margin: 40px auto; padding: 30px; border-radius: 12px; background: #fff; box-shadow: 0 8px 20px rgba(0,0,0,0.1); font-family: sans-serif; }
-    h2 { color: #333; text-align: center; margin-bottom: 25px; }
-    .form-group { margin-bottom: 20px; }
-    .form-row { display: flex; gap: 10px; }
-    .form-row .form-group { flex: 1; }
-    label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
-    input[type="text"], input[type="date"], input[type="time"], select, input[type="file"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-    
-    .services-checkbox-group { background: #fdfdfd; padding: 15px; border: 1px solid #eee; border-radius: 8px; max-height: 200px; overflow-y: auto; }
-    .checkbox-option { display: flex; align-items: center; margin-bottom: 10px; }
-    .checkbox-option input { margin-right: 10px; width: 18px; height: 18px; cursor: pointer; }
-    .checkbox-option label { margin-bottom: 0; font-weight: normal; cursor: pointer; color: #444; }
+    /* PAYMENT INSTRUCTIONS WITH ICONS */
+    .payment-instructions {
+        background: #f0f9ff; /* light blue */
+        border-left: 4px solid #3b82f6; /* accent */
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
 
-    .readonly-input { background-color: #f0fdf4; font-weight: bold; color: #166534; border: 1px solid #bbf7d0 !important; font-size: 1.1em; text-align: center; }
-    
-    .button-row { display: flex; gap: 10px; margin-top: 15px; }
-    .submit-btn { flex: 2; padding: 15px; background: #3498db; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-    .submit-btn:hover { background: #2980b9; }
-    .draft-btn { flex: 1; padding: 15px; background: #6c757d; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-    .draft-btn:hover { background: #5a6268; }
+    .payment-instructions h4 {
+        margin-top: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e3a8a;
+    }
 
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
-    .modal-card { background: white; padding: 25px; border-radius: 12px; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-    .modal-summary { margin: 20px 0; padding: 15px; background: #f9f9f9; border-radius: 8px; line-height: 1.6; }
-    .total-highlight { color: #166534; font-size: 1.2em; border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px; }
-    .modal-actions { display: flex; gap: 10px; }
-    .cancel-btn { flex: 1; padding: 12px; background: #eee; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    .confirm-btn { flex: 1; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .payment-instructions ul {
+        list-style: none;
+        padding-left: 0;
+    }
+
+    .payment-instructions ul li {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .payment-instructions ul li .icon {
+        font-size: 1.2rem;
+        margin-right: 8px;
+    }
+
+    .payment-instructions .note {
+        margin-top: 8px;
+        font-size: 0.85rem;
+        color: #475569;
+    }
+
+    /* CUSTOM FILE INPUT */
+    .custom-file-input {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+    }
+
+    .custom-file-input input[type="file"] {
+        width: 100%;
+        height: 45px;
+        opacity: 0;
+        position: absolute;
+        top: 0;
+        left: 0;
+        cursor: pointer;
+        z-index: 2;
+    }
+
+    .custom-file-input .file-label {
+        display: block;
+        padding: 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #fff;
+        color: #475569;
+        font-weight: 500;
+        text-align: center;
+        cursor: pointer;
+        z-index: 1;
+    }
+
+    /* Highlight label on hover */
+    .custom-file-input:hover .file-label {
+        background: #f1f5f9;
+    }
+
+    /* When file selected */
+    .custom-file-input input[type="file"]:valid + .file-label::after {
+        content: attr(data-file-name);
+        display: block;
+        margin-top: 4px;
+        font-size: 0.85rem;
+        color: #1e3a8a;
+        font-weight: 600;
+    }
+
+
+    .booking-container {
+        max-width: 550px;
+        margin: 40px auto;
+        padding: 30px;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        font-family: sans-serif;
+    }
+
+    h2 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 10px;
+    }
+
+    .form-row .form-group {
+        flex: 1;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+        color: #555;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="time"],
+    select,
+    input[type="file"] {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        box-sizing: border-box;
+    }
+
+    /* Services Checkbox Group */
+    .services-checkbox-group {
+        background: #fdfdfd;
+        padding: 15px;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .checkbox-option {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .checkbox-option input {
+        margin-right: 10px;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+
+    .checkbox-option label {
+        margin-bottom: 0;
+        font-weight: normal;
+        cursor: pointer;
+        color: #444;
+    }
+
+    /* Readonly Input */
+    .readonly-input {
+        background-color: #f0fdf4;
+        font-weight: bold;
+        color: #166534;
+        border: 1px solid #bbf7d0 !important;
+        font-size: 1.1em;
+        text-align: center;
+    }
+
+    /* Buttons */
+    .button-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .submit-btn {
+        flex: 2;
+        padding: 15px;
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    .submit-btn:hover {
+        background: #2980b9;
+    }
+
+    .draft-btn {
+        flex: 1;
+        padding: 15px;
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    .draft-btn:hover {
+        background: #5a6268;
+    }
+
+    /* Modal */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        width: 400px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-summary {
+        margin: 20px 0;
+        padding: 15px;
+        background: #f9f9f9;
+        border-radius: 8px;
+        line-height: 1.6;
+    }
+
+    .total-highlight {
+        color: #166534;
+        font-size: 1.2em;
+        border-top: 1px solid #ddd;
+        padding-top: 10px;
+        margin-top: 10px;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .cancel-btn {
+        flex: 1;
+        padding: 12px;
+        background: #eee;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .confirm-btn {
+        flex: 1;
+        padding: 12px;
+        background: #27ae60;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+    }
 
     .back-btn {
         display: inline-block;

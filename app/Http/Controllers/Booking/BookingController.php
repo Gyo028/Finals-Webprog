@@ -15,39 +15,39 @@ class BookingController extends Controller
      * Show the form for editing a draft booking.
      */
     public function edit($id)
-    {
-        $user = Auth::user();
+{
+    $user = Auth::user();
 
-        $booking = DB::table('bookings')
-            ->join('clients', 'bookings.client_id', '=', 'clients.client_id')
-            ->join('venues', 'bookings.venue_id', '=', 'venues.venue_id')
-            ->where('bookings.booking_id', $id)
-            ->where('bookings.status', 'draft')
-            ->where('clients.user_id', $user->user_id)
-            ->select('bookings.*', 'venues.venue_name', 'venues.venue_address')
-            ->first();
+    $booking = DB::table('bookings')
+        ->join('clients', 'bookings.client_id', '=', 'clients.client_id')
+        ->join('venues', 'bookings.venue_id', '=', 'venues.venue_id')
+        ->where('bookings.booking_id', $id)
+        ->whereIn('bookings.status', ['draft', 'denied']) // ✅ draft + denied editable
+        ->where('clients.user_id', $user->user_id)
+        ->select('bookings.*', 'venues.venue_name', 'venues.venue_address')
+        ->first();
 
-        if (!$booking) {
-            abort(403, 'This draft cannot be edited.');
-        }
-
-        $eventTypes = DB::table('events')->where('IsActive', 1)->get();
-        $services = DB::table('services')->get();
-        $paxOptions = DB::table('paxes')->orderBy('pax_count')->get();
-        
-        $selectedServices = DB::table('booking_services')
-            ->where('booking_id', $id)
-            ->pluck('service_id')
-            ->toArray();
-
-        return view('Client.EditBooking', compact(
-            'booking',
-            'eventTypes',
-            'services',
-            'paxOptions',
-            'selectedServices'
-        ));
+    if (!$booking) {
+        abort(403, 'This booking cannot be edited.');
     }
+
+    $eventTypes = DB::table('events')->where('IsActive', 1)->get();
+    $services = DB::table('services')->get();
+    $paxOptions = DB::table('paxes')->orderBy('pax_count')->get();
+
+    $selectedServices = DB::table('booking_services')
+        ->where('booking_id', $id)
+        ->pluck('service_id')
+        ->toArray();
+
+    return view('Client.EditBooking', compact(
+        'booking',
+        'eventTypes',
+        'services',
+        'paxOptions',
+        'selectedServices'
+    ));
+}
 
     /**
      * Show the form for creating a new booking.
@@ -58,7 +58,25 @@ class BookingController extends Controller
         $services = DB::table('services')->get();
         $paxOptions = DB::table('paxes')->orderBy('pax_count', 'asc')->get();
 
-        return view('Client.NewBooking', compact('eventTypes', 'services', 'paxOptions'));
+        $user = Auth::user();
+
+        // 🔴 Approved bookings (ALL users)
+        $approvedDates = DB::table('bookings')
+        ->where('status', 'approved')
+        ->pluck('booking_date')
+        ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
+        ->toArray();
+
+        // 🟡 Pending bookings (ONLY this user)
+        $pendingDates = DB::table('bookings')
+        ->join('clients', 'bookings.client_id', '=', 'clients.client_id')
+        ->where('clients.user_id', $user->user_id)
+        ->where('bookings.status', 'pending')
+        ->pluck('booking_date')
+        ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
+        ->toArray();
+
+        return view('Client.NewBooking', compact('eventTypes', 'services', 'paxOptions', 'approvedDates', 'pendingDates'));
     }
 
     /**

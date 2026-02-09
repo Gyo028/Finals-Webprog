@@ -149,6 +149,7 @@ Route::middleware(['auth'])->group(function () {
         // Main Entry point (Handles both tabs via query params)
         Route::get('/dashboard', [ManagementController::class, 'dashboard'])->name('dashboard');
         
+        // ❌ FIXED: Re-added this name to prevent the RouteNotFound error in your Blade
         // It simply points to the same dashboard method.
         Route::get('/offerings', [ManagementController::class, 'dashboard'])->name('offerings');
 
@@ -218,7 +219,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/bookings/validate-step4', [BookingController::class, 'validateStep4'])
     ->name('bookings.validateStep4')
     ->middleware('auth');
-
 
 /*
 |--------------------------------------------------------------------------
