@@ -243,3 +243,10 @@ Route::get('/test-email', function () {
     ]));
     return 'Email sent successfully!';
 });
+
+
+//test route
+// NEW ROUTE: Added to view your new time selection blade directly
+Route::get('/booking/time-selection', function () {
+    return view('Client.time-selection'); // Ensure the file is at resources/views/time-selection.blade.php
+})->name('bookings.time-selection')->middleware('auth');
