@@ -104,9 +104,13 @@
     </div>
 </div>
 
+
+
 <div class="dashboard">
     <div class="table-container">
+        <h1>My Bookings</h1>
         <div class="table-header">
+            
             <div class="search-bar">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 {{-- Updated placeholder for Event Type focus --}}
