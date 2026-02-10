@@ -37,7 +37,13 @@
                 <div class="detail-card">
                     <span class="detail-label">📍 Venue & Address</span>
                     <div id="m_venue" class="detail-value">Venue Name</div>
-                    <div id="m_address" class="value-subtext">Address loading...</div>
+                    
+                    <a id="m_address_link" href="#" target="_blank" style="text-decoration: none; display: block; margin-top: 4px;">
+                        <div class="value-subtext" style="color: #2563eb; cursor: pointer; display: flex; align-items: flex-start; gap: 4px;">
+                            <span style="font-size: 14px;">📍</span>
+                            <span id="m_address">Address loading...</span>
+                        </div>
+                    </a>
                 </div>
 
                 <div class="mgmt-modal-row">
@@ -63,7 +69,7 @@
                 <span class="detail-label" style="position: absolute; top: 20px; left: 20px;">Proof of Payment</span>
                 
                 <div id="m_receipt_container">
-                    <img id="m_receipt_img" class="receipt-img" src="" onclick="openLightbox(this.src)" alt="Receipt">
+                    <img id="m_receipt_img" class="receipt-img" src="" onclick="openLightbox(this.src)" alt="Receipt" style="cursor: zoom-in;">
                     
                     <div id="m_no_receipt" class="no-receipt-placeholder">
                         <span style="font-size: 40px;">📷</span>
@@ -83,6 +89,11 @@
         </div>
 
         <div id="m_action_container" style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
-            </div>
+        </div>
     </div>
+</div>
+
+<div id="receiptLightbox" class="mgmt-modal-overlay" style="display:none; z-index: 10000; background: rgba(0,0,0,0.85); cursor: pointer;" onclick="closeLightbox()">
+    <span style="position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold;">&times;</span>
+    <img id="lightboxImg" src="" style="max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 0 30px rgba(0,0,0,0.5); cursor: default;" onclick="event.stopPropagation()">
 </div>

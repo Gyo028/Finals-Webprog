@@ -53,12 +53,35 @@ function openBookingModal(booking) {
     if(eventEl) eventEl.innerText = booking.event_name || 'N/A';
     if(paxEl) paxEl.innerText = booking.pax_count || 'N/A';
 
-    // 4. Venue & Address
+    // 4. Venue & Address (Updated for Google Maps Redirection)
     const venueEl = document.getElementById('m_venue');
     const addrEl = document.getElementById('m_address');
-    if(venueEl) venueEl.innerText = booking.venue_name || 'Venue not found';
-    if(addrEl) addrEl.innerText = booking.venue_address || '';
+    const addrLink = document.getElementById('m_address_link');
 
+    const venueName = booking.venue_name || '';
+    const venueAddress = booking.venue_address || '';
+
+    if (venueEl) venueEl.innerText = venueName || 'Venue not found';
+    if (addrEl) addrEl.innerText = venueAddress || 'No address provided';
+
+    if (addrLink) {
+        if (venueAddress) {
+            // We combine "Venue Name, Full Address" for the best search result
+            const searchQuery = `${venueName} ${venueAddress}`.trim();
+            const encodedQuery = encodeURIComponent(searchQuery);
+            
+            addrLink.href = `https://www.google.com/maps/search/?api=1&query=${encodedQuery}`;
+            addrLink.title = "View on Google Maps";
+            addrLink.style.pointerEvents = 'auto';
+            addrLink.style.opacity = '1';
+        } else {
+            // If there's no address, disable the link
+            addrLink.href = "#";
+            addrLink.style.pointerEvents = 'none';
+            addrLink.style.opacity = '0.7';
+            if (addrEl) addrEl.innerText = "No address available";
+        }
+    }
     // 5. Date & Time Formatting (UPDATED)
     if (booking.booking_date) {
         const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
