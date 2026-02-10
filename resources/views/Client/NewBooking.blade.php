@@ -91,14 +91,25 @@
         </div>
 
         <div class="form-group">
-            <label>Click the checkbox for Additional Services</label>
-            <div class="services-checkbox-group">
+        <label>Click the checkbox for Additional Services</label>
+
+        <div class="option-grid" id="serviceOptions">
                 @foreach($services as $service)
-                    <label class="checkbox-option">
-                        <input type="checkbox" name="service_id[]" value="{{ $service->service_id }}"
-                            data-price="{{ $service->service_price }}" onchange="updateTotal()">
-                        {{ $service->service_name }} (+₱{{ number_format($service->service_price, 2) }})
-                    </label>
+                    <div class="option-card service-card"
+                        data-id="{{ $service->service_id }}"
+                        data-price="{{ $service->service_price }}"
+                        onclick="toggleService(this)">
+
+                        <h4>{{ $service->service_name }}</h4>
+                        <p>+ ₱{{ number_format($service->service_price, 2) }}</p>
+
+                        <!-- hidden checkbox (still submitted) -->
+                        <input type="checkbox"
+                            name="service_id[]"
+                            value="{{ $service->service_id }}"
+                            data-price="{{ $service->service_price }}"
+                            hidden>
+                    </div>
                 @endforeach
             </div>
         </div>
@@ -201,6 +212,16 @@
 </div>
 
 <script>
+
+    function toggleService(card) {
+        const checkbox = card.querySelector('input[type="checkbox"]');
+
+        checkbox.checked = !checkbox.checked;
+        card.classList.toggle('active', checkbox.checked);
+
+        updateTotal();
+    }
+
     let selectedEventPrice = 0;
     let selectedPaxPrice = 0;
 
@@ -478,6 +499,16 @@
 </script>
 
 <style>
+
+    .service-card {
+        cursor: pointer;
+    }
+
+    .service-card.active {
+        border-color: #7096d1;
+        background: #f0f6ff;
+    }
+
     .option-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -514,6 +545,7 @@
         font-size: 0.8rem;
         color: #555;
     }
+
 
     /* PAYMENT INSTRUCTIONS WITH ICONS */
     .payment-instructions {
