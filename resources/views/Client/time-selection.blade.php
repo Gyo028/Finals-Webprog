@@ -11,8 +11,8 @@
         <div class="calendar-header">
             <h3 id="currentMonthYear"></h3>
             <div>
-                <button onclick="changeMonth(-1)">‹</button>
-                <button onclick="changeMonth(1)">›</button>
+                <button type="button" onclick="changeMonth(-1)">‹</button>
+                <button type="button" onclick="changeMonth(1)">›</button>
             </div>
         </div>
 
@@ -193,6 +193,14 @@
 </style>
 
 <script>
+
+// ===== MONTH NAV =====
+function changeMonth(step) {
+    viewDate.setMonth(viewDate.getMonth() + step);
+    renderCalendar();
+}
+
+
 // ===== CORE DATES =====
 const today = new Date();
 today.setHours(0,0,0,0);

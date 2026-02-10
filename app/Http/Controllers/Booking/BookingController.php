@@ -443,7 +443,25 @@ class BookingController extends Controller
                 'venue_address' => ['required', 'string'],
             ],
             2 => [
-                'event_date'        => ['required', 'date', 'after:today'],
+                'event_date'       => [
+                'required',
+                'date',
+                function ($attribute, $value, $fail) {
+                    $selectedDate = Carbon::parse($value);
+                    // 1. Must be at least 1 month in advance
+                    if ($selectedDate->lt(now()->addMonth())) {
+                        $fail('Bookings must be made at least 1 month in advance.');
+                    }
+                    // 2. Cannot overlap an approved booking
+                    $existing = DB::table('bookings')
+                        ->where('booking_date', $selectedDate->format('Y-m-d'))
+                        ->where('status', 'approved')
+                        ->first();
+                    if ($existing) {
+                        $fail('The selected date is already booked. Please choose another date.');
+                    }
+                },
+            ],
                 'event_time'        => ['required'],
                 'booking_end_time'  => ['required',],
             ],

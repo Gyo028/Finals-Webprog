@@ -29,28 +29,44 @@
     <div class="form-step active">
         <h3>Step 1: Event & Guests</h3>
 
+        <!-- EVENT TYPE -->
         <div class="form-group">
-            <label for="event_id">What kind of event?</label>
-            <select name="event_id" id="event_id" onchange="updateTotal()">
-                <option value="">-- Choose an Event --</option>
+            <label>Choose what kind of event</label>
+
+            <div class="option-grid" id="eventOptions">
                 @foreach($eventTypes as $event)
-                    <option value="{{ $event->event_id }}" data-price="{{ $event->event_base_price }}">
-                        {{ $event->event_name }} (₱{{ number_format($event->event_base_price, 2) }})
-                    </option>
+                    <div class="option-card"
+                        data-id="{{ $event->event_id }}"
+                        data-price="{{ $event->event_base_price }}"
+                        onclick="selectEvent(this)">
+                        <h4>{{ $event->event_name }}</h4>
+                        <p>₱{{ number_format($event->event_base_price, 2) }}</p>
+                    </div>
                 @endforeach
-            </select>
+            </div>
+
+            <!-- Hidden input (important) -->
+            <input type="hidden" name="event_id" id="event_id">
         </div>
 
+        <!-- GUEST COUNT -->
         <div class="form-group">
-            <label for="pax_id">Number of Guests</label>
-            <select name="pax_id" id="pax_id" onchange="updateTotal()">
-                <option value="">-- Select Guest Count --</option>
+            <label>Choose number of guests</label>
+
+            <div class="option-grid" id="paxOptions">
                 @foreach($paxOptions as $pax)
-                    <option value="{{ $pax->pax_id }}" data-price="{{ $pax->pax_price }}">
-                        {{ $pax->pax_count }} Pax (+₱{{ number_format($pax->pax_price, 2) }})
-                    </option>
+                    <div class="option-card"
+                        data-id="{{ $pax->pax_id }}"
+                        data-price="{{ $pax->pax_price }}"
+                        onclick="selectPax(this)">
+                        <h4>{{ $pax->pax_count }} Pax</h4>
+                        <p>+ ₱{{ number_format($pax->pax_price, 2) }}</p>
+                    </div>
                 @endforeach
-            </select>
+            </div>
+
+            <!-- Hidden input -->
+            <input type="hidden" name="pax_id" id="pax_id">
         </div>
 
         <div class="step-buttons">
@@ -63,19 +79,19 @@
         <h3>Step 2: Venue & Services</h3>
 
         <div class="form-group">
-            <label>Venue Name</label>
+            <label>Enter the Name of the Venue</label>
             <input type="text" name="venue_name" id="venue_name">
         </div>
 
         <div class="form-group" style="position: relative;">
-            <label>Venue Address</label>
+            <label>Enter the Address of the Venue (Select from the suggestions)</label>
             <input type="text" id="address-search" placeholder="Search address..." autocomplete="off">
             <div id="results-list" class="results-list"></div>
             <input type="hidden" name="venue_address" id="final-address">
         </div>
 
         <div class="form-group">
-            <label>Additional Services</label>
+            <label>Click the checkbox for Additional Services</label>
             <div class="services-checkbox-group">
                 @foreach($services as $service)
                     <label class="checkbox-option">
@@ -98,7 +114,7 @@
         <h3>Step 3: Date & Time</h3>
 
         <div class="form-group">
-            <label>Event Date</label>
+            <label>Choose the Date & Time of the Event</label>
             @include('Client.time-selection')
             <input type="date" name="event_date" id="event_date" hidden>
         </div>
@@ -185,6 +201,33 @@
 </div>
 
 <script>
+    let selectedEventPrice = 0;
+    let selectedPaxPrice = 0;
+
+    function selectEvent(card) {
+        document.querySelectorAll('#eventOptions .option-card')
+            .forEach(c => c.classList.remove('active'));
+
+        card.classList.add('active');
+
+        document.getElementById('event_id').value = card.dataset.id;
+        selectedEventPrice = parseFloat(card.dataset.price);
+
+        updateTotal();
+    }
+
+    function selectPax(card) {
+        document.querySelectorAll('#paxOptions .option-card')
+            .forEach(c => c.classList.remove('active'));
+
+        card.classList.add('active');
+
+        document.getElementById('pax_id').value = card.dataset.id;
+        selectedPaxPrice = parseFloat(card.dataset.price);
+
+        updateTotal();
+    }
+
     function isDateAtLeastOneMonth() {
         const dateInput = document.querySelector('input[name="event_date"]');
         const selectedDate = new Date(dateInput.value);
@@ -200,27 +243,29 @@
     }
 
     function updateTotal() {
-        const eventSelect = document.getElementById('event_id');
-        const paxSelect = document.getElementById('pax_id');
-        const display = document.getElementById('display_total');
-        const hiddenTotal = document.getElementById('total_amount');
-        
-        const selectedEvent = eventSelect.options[eventSelect.selectedIndex];
-        const eventPrice = parseFloat(selectedEvent.getAttribute('data-price')) || 0;
-
-        const selectedPax = paxSelect.options[paxSelect.selectedIndex];
-        const paxPrice = selectedPax ? (parseFloat(selectedPax.getAttribute('data-price')) || 0) : 0;
-
         let servicesPrice = 0;
+
         const checkedServices = document.querySelectorAll('input[name="service_id[]"]:checked');
-        checkedServices.forEach(checkbox => {
-            servicesPrice += parseFloat(checkbox.getAttribute('data-price')) || 0;
+        checkedServices.forEach(cb => {
+            servicesPrice += parseFloat(cb.dataset.price) || 0;
         });
 
-        const total = eventPrice + paxPrice + servicesPrice;
-        display.value = "₱" + total.toLocaleString(undefined, {minimumFractionDigits: 2});
-        hiddenTotal.value = total;
+        const total = selectedEventPrice + selectedPaxPrice + servicesPrice;
+
+        const display = document.getElementById('display_total');
+        const hiddenTotal = document.getElementById('total_amount');
+
+        if (display) {
+            display.value = "₱" + total.toLocaleString(undefined, {
+                minimumFractionDigits: 2
+            });
+        }
+
+        if (hiddenTotal) {
+            hiddenTotal.value = total;
+        }
     }
+
 
     const form = document.getElementById('bookingForm');
     const modal = document.getElementById('confirmModal');
@@ -249,8 +294,12 @@
             }
 
             // Validation passed → open modal
-            const event = document.getElementById('event_id').options[document.getElementById('event_id').selectedIndex].text;
-            const pax = document.getElementById('pax_id').options[document.getElementById('pax_id').selectedIndex].text;
+            const eventCard = document.querySelector('#eventOptions .option-card.active');
+            const paxCard = document.querySelector('#paxOptions .option-card.active');
+
+            const event = eventCard ? eventCard.querySelector('h4').innerText : '—';
+            const pax = paxCard ? paxCard.querySelector('h4').innerText : '—';
+
             const venue = document.getElementById('venue_name').value;
             const date = document.querySelector('input[name="event_date"]').value;
             const startTime = document.getElementById('event_time').value;
@@ -429,6 +478,43 @@
 </script>
 
 <style>
+    .option-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin-top: 10px;
+    }
+
+    .option-card {
+        border: 2px solid #ddd;
+        border-radius: 12px;
+        padding: 1px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #fff;
+    }
+
+    .option-card:hover {
+        border-color: #6c5ce7;
+        transform: translateY(-2px);
+    }
+
+    .option-card.active {
+        border-color: #6c5ce7;
+        background: #f3f1ff;
+    }
+
+    .option-card h4 {
+        margin-bottom: 0.9rem;
+        color: #333;
+    }
+
+    .option-card p {
+        font-size: 0.8rem;
+        color: #555;
+    }
+
     /* PAYMENT INSTRUCTIONS WITH ICONS */
     .payment-instructions {
         background: #f0f9ff; /* light blue */
