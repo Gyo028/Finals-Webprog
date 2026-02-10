@@ -23,61 +23,90 @@ class DatabaseSeeder extends Seeder
     {
         /**
          * 1. CALL COMPONENT SEEDERS
-         * These must run first because they provide the foreign keys 
-         * for Users and Bookings.
          */
         $this->call([
             RoleSeeder::class,    // role_id 1: Manager, 2: Client
-            VenueSeeder::class,   // venue_id
-            EventSeeder::class,   // event_id
-            PaxSeeder::class,     // pax_id
-            ServiceSeeder::class, // service_id
+            VenueSeeder::class,   
+            EventSeeder::class,   
+            PaxSeeder::class,     
+            ServiceSeeder::class, 
         ]);
 
         /**
-         * 2. SEED MANAGER USER & PROFILE
-         * Creates the login credentials AND the associated profile.
+         * 2. SEED SYSTEM ADMIN MANAGER
          */
-        $adminUser = User::create([
-            'username'      => 'admin_manager',
-            'email'         => 'admin@test.com',
-            'password'      => Hash::make('password'), // Always hash passwords
-            'role_id'       => 1, // Points to 'Manager'
-            'mobile_number' => '09123456789',
-            'IsActive'      => true,
-        ]);
+        $adminUser = User::firstOrCreate(
+            ['username' => 'admin_manager'],
+            [
+                'email'         => 'admin@test.com',
+                'password'      => Hash::make('password'),
+                'role_id'       => 1,
+                'mobile_number' => '09123456789',
+                'IsActive'      => true,
+            ]
+        );
 
-        Manager::create([
-            'user_id'     => $adminUser->user_id,
-            'first_name'  => 'System',
-            'middle_name' => 'The',
-            'last_name'   => 'Admin',
-            'bday'        => '1990-01-01',
-            'IsActive'    => true,
-        ]);
+        Manager::firstOrCreate(
+            ['user_id' => $adminUser->user_id],
+            [
+                'first_name'  => 'System',
+                'middle_name' => 'The',
+                'last_name'   => 'Admin',
+                'bday'        => '1990-01-01',
+                'IsActive'    => true,
+            ]
+        );
 
         /**
-         * 3. SEED CLIENT USER & PROFILE
-         * This allows you to log in as a client immediately.
+         * 3. NEW MANAGER: VINCENT SOLA
          */
-        $clientUser = User::create([
-            'username'      => 'john_doe',
-            'email'         => 'john@test.com',
-            'password'      => Hash::make('password'),
-            'role_id'       => 2, // Points to 'Client'
-            'mobile_number' => '09987654321',
-            'IsActive'      => true,
-        ]);
+        $vincentUser = User::firstOrCreate(
+            ['username' => 'admin_vincent'],
+            [
+                'email'         => 'vincent@test.com',
+                'password'      => Hash::make('password'),
+                'role_id'       => 1,
+                'mobile_number' => '09111111111',
+                'IsActive'      => true,
+            ]
+        );
 
-        Client::create([
-            'user_id'     => $clientUser->user_id,
-            'first_name'  => 'John',
-            'middle_name' => 'Quincy',
-            'last_name'   => 'Doe',
-            'bday'        => '1995-05-20',
-            'IsActive'    => true,
-        ]);
+        Manager::firstOrCreate(
+            ['user_id' => $vincentUser->user_id],
+            [
+                'first_name'  => 'Vincent',
+                'middle_name' => '',
+                'last_name'   => 'Sola',
+                'bday'        => '1992-01-01',
+                'IsActive'    => true,
+            ]
+        );
+
+        /**
+         * 4. SEED CLIENT USER
+         */
+        $clientUser = User::firstOrCreate(
+            ['username' => 'john_doe'],
+            [
+                'email'         => 'john@test.com',
+                'password'      => Hash::make('password'),
+                'role_id'       => 2,
+                'mobile_number' => '09987654321',
+                'IsActive'      => true,
+            ]
+        );
+
+        Client::firstOrCreate(
+            ['user_id' => $clientUser->user_id],
+            [
+                'first_name'  => 'John',
+                'middle_name' => 'Quincy',
+                'last_name'   => 'Doe',
+                'bday'        => '1995-05-20',
+                'IsActive'    => true,
+            ]
+        );
         
-        $this->command->info('Database fully seeded with Roles, Venues, Events, and default Users!');
+        $this->command->info('Database fully seeded! Added admin_vincent and handled duplicates.');
     }
 }
