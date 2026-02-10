@@ -25,9 +25,7 @@ class ManagementController extends Controller
         $currentTab = $request->query('tab', 'bookings');
         $search = $request->query('search');
         
-        // Updated Stats Logic:
-        // 'payments' now only sums amounts for bookings that are currently 'approved'.
-        // If a booking is moved to 'cancelled' or 'denied', it is automatically deducted.
+        // Stats remain the same, accurately reflecting totals based on current status
         $stats = [
             'pending'   => Booking::where('status', Booking::STATUS_PENDING)->count(),
             'approved'  => Booking::where('status', Booking::STATUS_APPROVED)->count(),
@@ -59,7 +57,17 @@ class ManagementController extends Controller
             
         } else {
             $status = $request->query('status', Booking::STATUS_PENDING);
-            $query = Booking::with(['client.user', 'venue', 'event', 'pax', 'payments', 'services'])->latest();
+            
+            // UPDATED: Added 'manager' to with() to show who reviewed the booking
+            $query = Booking::with([
+                'client.user', 
+                'venue', 
+                'event', 
+                'pax', 
+                'payments', 
+                'services', 
+                'manager' // <--- Added this relationship
+            ])->latest();
 
             if (!empty($status)) {
                 $query->where('status', $status);
@@ -68,10 +76,10 @@ class ManagementController extends Controller
             if (!empty($search)) {
                 $query->where(function($q) use ($search) {
                     $q->where('booking_id', 'LIKE', "%{$search}%")
-                      ->orWhereHas('client', function($cq) use ($search) {
-                          $cq->where('first_name', 'LIKE', "%{$search}%")
-                             ->orWhere('last_name', 'LIKE', "%{$search}%");
-                      });
+                    ->orWhereHas('client', function($cq) use ($search) {
+                        $cq->where('first_name', 'LIKE', "%{$search}%")
+                            ->orWhere('last_name', 'LIKE', "%{$search}%");
+                    });
                 });
             }
 
@@ -79,7 +87,7 @@ class ManagementController extends Controller
             $payments = Payment::with('booking.client')->latest()->limit(10)->get();
         }
 
-        // ✅ AJAX CHECK: If the request is AJAX (from your JS search), return only the partials
+        // AJAX Check remains intact for dynamic search/tabs
         if ($request->ajax()) {
             if ($currentTab === 'offerings') {
                 return view('Management.Offering', compact('events', 'paxes', 'services', 'currentTab', 'search'))->render();
@@ -93,9 +101,6 @@ class ManagementController extends Controller
     }
 
     /**
-     * Approve a booking
-     */
-/**
      * Approve a booking
      */
     public function approve(Request $request, $id)

@@ -2,15 +2,6 @@
     Provides a detailed view of a specific booking. 
     Allows staff to review client info, event details, venue location, 
     and proof of payment (with lightbox expansion).
-
-    Key Features:
-    1. Dynamic Status Handling: Shows different action buttons (Approve, 
-       Reject, Cancel) based on the current booking status.
-    2. Admin Notes: A centralized textarea for remarks or 
-       rejection reasons.
-    3. Note Syncing: Uses 'syncNotes()' to ensure the textarea content 
-       is passed into the hidden inputs of the specific action forms.
-    4. Receipt Preview: Displays an uploaded image or a placeholder if empty.
 --}}
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">

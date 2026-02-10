@@ -1,3 +1,9 @@
+{{-- 
+    Main interface for administrators to view, search, and filter 
+    client bookings. Includes status-based filtering (Pending, 
+    Approved, Rejected, Cancelled) and AJAX-driven live search.
+--}}
+
 <link rel="stylesheet" href="{{ asset('css/management.css') }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
@@ -38,7 +44,6 @@
                             onchange="this.form.submit()" {{ request('status') == 'denied' ? 'checked' : '' }}>
                         <label for="status_denied">Rejected</label>
 
-                        {{-- NEW CANCELLED FILTER --}}
                         <input type="radio" name="status" id="status_cancelled" value="cancelled" 
                             onchange="this.form.submit()" {{ request('status') == 'cancelled' ? 'checked' : '' }}>
                         <label for="status_cancelled">Cancelled</label>
@@ -53,8 +58,9 @@
             <table class="mgmt-table">
                 <thead>
                     <tr>
-                        <th class="text-left" style="width: 30%;">CLIENT</th>
-                        <th class="text-left" style="width: 30%;">DATE SUBMITTED</th>
+                        <th class="text-left" style="width: 20%;">CLIENT</th>
+                        <th class="text-left" style="width: 20%;">DATE SUBMITTED</th>
+                        <th class="text-center" style="width: 20%;">REVIEWED BY</th> {{-- NEW COLUMN --}}
                         <th class="text-center" style="width: 20%;">STATUS</th>
                         <th class="text-right" style="width: 20%;">ACTION</th>
                     </tr>
@@ -77,8 +83,18 @@
                                 </small>
                             </td>
 
+                            {{-- NEW COLUMN: MANAGER NAME --}}
                             <td class="text-center">
-                                {{-- Updated Badge Logic --}}
+                                @if($booking->manager)
+                                    <span style="font-weight: 500; color: #334155;">
+                                        {{ $booking->manager->first_name }} {{ $booking->manager->last_name }}
+                                    </span>
+                                @else
+                                    <span style="color: #94a3b8;">-</span>
+                                @endif
+                            </td>
+
+                            <td class="text-center">
                                 <span class="mgmt-badge {{ $booking->status }}">
                                     @if($booking->status === 'denied')
                                         Rejected
@@ -116,7 +132,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4">
+                            <td colspan="5"> {{-- Updated colspan to 5 --}}
                                 <div class="empty-state" style="padding: 40px; text-align: center; color: #888;">
                                     <i class="fa-solid fa-box-open" style="font-size: 30px; margin-bottom: 10px;"></i>
                                     <p>No results found.</p>
