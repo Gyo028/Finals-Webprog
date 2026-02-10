@@ -149,7 +149,11 @@
                             </span>
                         </td>
                         <td>
-                            <a href="#" class="action-btn"><i class="fa-solid fa-eye"></i></a>
+                            <a href="javascript:void(0)" 
+                            onclick='openBookingModal(@json($booking))' 
+                            class="action-btn">
+                            <i class="fa-solid fa-eye"></i>
+                            </a>
                         </td>
                     </tr>
                     @endforeach
@@ -166,145 +170,20 @@
     <div id="paginationControls" class="pagination-container"></div>
 </div>
 
+
+
+@include('Client.BookingModal')
 @include('LandingPage.footer')
 
 <script>
-    // --- CONFIGURATION ---
-    const rowsPerPage = 5;
-    let currentPage = 1;
-
-    // --- HERO IMAGE SLIDER ---
-    const hero = document.getElementById('hero');
-    const images = [
+    // Pass Laravel asset URLs to the global window object
+    window.heroImages = [
         "{{ asset('images/event1.jpeg') }}",
         "{{ asset('images/event2.jpg') }}",
         "{{ asset('images/event3.jpg') }}",
         "{{ asset('images/wedding.jpg') }}"
     ];
-    let imageIndex = 0;
-
-    function changeHeroImage() {
-        if (hero && images.length > 0) {
-            hero.style.backgroundImage =
-                `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('${images[imageIndex]}')`;
-            imageIndex = (imageIndex + 1) % images.length;
-        }
-    }
-    changeHeroImage();
-    setInterval(changeHeroImage, 4000);
-
-    // --- CORE TABLE LOGIC ---
-
-    function filterTable(status, btn) {
-        const buttons = document.querySelectorAll('.tab-btn');
-        buttons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        document.getElementById('bookingsTable').setAttribute('data-current-filter', status);
-
-        currentPage = 1;
-        updateTableDisplay();
-    }
-
-    function updateTableDisplay() {
-        const table = document.getElementById('bookingsTable');
-        const tbody = table.querySelector('tbody');
-        const rows = Array.from(document.querySelectorAll('.booking-row'));
-        const searchTerm = document.getElementById('dashboardSearch').value.toLowerCase();
-        const activeFilter = table.getAttribute('data-current-filter') || 'draft';
-
-        // 1. Filter rows based on Status AND (Event Type OR Date)
-        const filteredRows = rows.filter(row => {
-            const rowStatus = row.getAttribute('data-status').toLowerCase();
-            
-            // Get content for searching
-            const eventName = row.querySelector('.event-type-cell').innerText.toLowerCase();
-            const dateText = row.querySelector('.date-submitted').innerText.toLowerCase();
-            
-            const matchesStatus = (rowStatus === activeFilter);
-            
-            // Functional Search: Checks Event Name OR Date
-            const matchesSearch = eventName.includes(searchTerm) || dateText.includes(searchTerm);
-            
-            return matchesStatus && matchesSearch;
-        });
-
-        // 2. Hide ALL rows and remove any existing "No Results" message
-        rows.forEach(row => row.style.display = "none");
-        const existingNoResults = document.getElementById('no-results-row');
-        if (existingNoResults) existingNoResults.remove();
-
-        // 3. Handle Empty State
-        if (filteredRows.length === 0) {
-            const noResultsRow = document.createElement('tr');
-            noResultsRow.id = 'no-results-row';
-            noResultsRow.innerHTML = `<td colspan="5" style="text-align:center; padding: 40px; color: #999;">No bookings found matching your criteria.</td>`;
-            tbody.appendChild(noResultsRow);
-            renderPagination(0);
-            return;
-        }
-
-        // 4. Calculate Pagination
-        const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
-        const start = (currentPage - 1) * rowsPerPage;
-        const end = start + rowsPerPage;
-        const paginatedRows = filteredRows.slice(start, end);
-
-        // 5. Show results
-        paginatedRows.forEach(row => row.style.display = "");
-
-        renderPagination(totalPages);
-    }
-
-    function renderPagination(totalPages) {
-        let container = document.getElementById('paginationControls');
-        if (!container) {
-            const tableWrap = document.querySelector('.table-responsive');
-            container = document.createElement('div');
-            container.id = 'paginationControls';
-            container.className = 'pagination-container';
-            tableWrap.after(container);
-        }
-
-        container.innerHTML = "";
-        if (totalPages <= 1) return;
-
-        const prevBtn = document.createElement('button');
-        prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
-        prevBtn.className = 'pg-btn';
-        prevBtn.disabled = (currentPage === 1);
-        prevBtn.onclick = () => { currentPage--; updateTableDisplay(); };
-        container.appendChild(prevBtn);
-
-        for (let i = 1; i <= totalPages; i++) {
-            const pageBtn = document.createElement('button');
-            pageBtn.innerText = i;
-            pageBtn.className = `pg-btn ${i === currentPage ? 'active' : ''}`;
-            pageBtn.onclick = () => { currentPage = i; updateTableDisplay(); };
-            container.appendChild(pageBtn);
-        }
-
-        const nextBtn = document.createElement('button');
-        nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
-        nextBtn.className = 'pg-btn';
-        nextBtn.disabled = (currentPage === totalPages);
-        nextBtn.onclick = () => { currentPage++; updateTableDisplay(); };
-        container.appendChild(nextBtn);
-    }
-
-    // --- SEARCH LOGIC ---
-    document.getElementById('dashboardSearch').addEventListener('keyup', function() {
-        currentPage = 1; 
-        updateTableDisplay();
-    });
-
-    // --- INITIALIZE ---
-    document.addEventListener('DOMContentLoaded', function() {
-        const activeBtn = document.querySelector('.tab-btn.active');
-        if (activeBtn) {
-            // Extracts 'draft' from onclick="filterTable('draft', this)"
-            const status = activeBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
-            filterTable(status, activeBtn);
-        }
-    });
 </script>
+<script src="{{ asset('js/management/client/client-booking-modal.js') }}"></script>
+
+<script src="{{ asset('js/management/client/client-booking-modal.js') }}"></script>

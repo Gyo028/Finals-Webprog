@@ -1,0 +1,190 @@
+/* Modal Overlay */
+.mgmt-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+/* Modal Content Container */
+.mgmt-modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    width: 95%;
+    max-width: 900px;
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Header & Titles */
+.mgmt-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.mgmt-modal-title {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #1e293b;
+}
+
+/* Layout Flexbox */
+.mgmt-modal-flex {
+    display: flex;
+    gap: 25px;
+    align-items: flex-start;
+}
+
+.mgmt-modal-details-col {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.mgmt-modal-row {
+    display: flex;
+    gap: 12px;
+}
+
+/* Cards & Labels */
+.detail-card {
+    flex: 1;
+    border: 1px solid #e2e8f0;
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.detail-card.highlight-green {
+    background: #f0fdf4;
+}
+
+.detail-card.highlight-purple {
+    border: 1px solid #f5f3ff;
+    background: #faf5ff;
+}
+
+.detail-label {
+    font-size: 0.7rem;
+    color: #64748b;
+    text-transform: uppercase;
+    font-weight: 600;
+    display: block;
+}
+
+.detail-value {
+    font-weight: 700;
+    color: #1e293b;
+    margin-top: 4px;
+}
+
+/* Colors for specific values */
+.value-price { color: #15803d; }
+.value-services { color: #7e22ce; }
+.value-subtext { font-size: 0.8rem; color: #64748b; margin-top: 2px; }
+
+/* Proof of Payment Section */
+.receipt-column {
+    flex: 1;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 20px;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.receipt-img {
+    max-width: 100%;
+    max-height: 320px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.no-receipt-placeholder {
+    text-align: center;
+    color: #94a3b8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.click-hint {
+    margin-top: 20px;
+    font-size: 0.7rem;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* Admin Remarks */
+.mgmt-admin-notes {
+    margin-top: 15px;
+}
+
+.remarks-box {
+    margin-top: 8px;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 8px;
+    color: #475569;
+    font-size: 0.9rem;
+    min-height: 60px;
+    border: 1px solid #e2e8f0;
+    line-height: 1.5;
+}
+
+/* Close Button */
+.mgmt-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #64748b;
+}
+
+/* Action Buttons */
+.btn-edit-details, .btn-resubmit {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s;
+}
+
+.btn-edit-details {
+    background-color: #3b82f6; /* Blue */
+    color: white;
+}
+
+.btn-edit-details:hover {
+    background-color: #2563eb;
+}
+
+.btn-resubmit {
+    background-color: #ef4444; /* Red */
+    color: white;
+}
+
+.btn-resubmit:hover {
+    background-color: #dc2626;
+}

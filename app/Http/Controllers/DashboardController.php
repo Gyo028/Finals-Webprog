@@ -21,7 +21,7 @@ class DashboardController extends Controller
             return view('Client.UserDashboard', [
                 'nextBooking' => null,
                 'completedBookings' => collect(),
-                'allBookings' => collect(), // Changed name to match the table loop
+                'allBookings' => collect(),
             ]);
         }
 
@@ -36,7 +36,7 @@ class DashboardController extends Controller
             ->select('bookings.*', 'events.event_name', 'venues.venue_name')
             ->first();
 
-        // ✅ COMPLETED APPOINTMENTS (The left card)
+        // ✅ COMPLETED APPOINTMENTS
         $completedBookings = DB::table('bookings')
             ->join('events', 'bookings.event_id', '=', 'events.event_id')
             ->join('venues', 'bookings.venue_id', '=', 'venues.venue_id')
@@ -47,17 +47,30 @@ class DashboardController extends Controller
             })
             ->orderBy('bookings.booking_date', 'desc')
             ->select('bookings.*', 'events.event_name', 'venues.venue_name')
-            ->take(5) // Limit to 5 for the card display
+            ->take(5)
             ->get();
 
-        // 📋 ALL APPOINTMENTS (The Table Data)
+        // 📋 ALL APPOINTMENTS (Updated for your new Modal)
         $allBookings = DB::table('bookings')
             ->join('events', 'bookings.event_id', '=', 'events.event_id')
+            ->join('venues', 'bookings.venue_id', '=', 'venues.venue_id')
+            ->join('paxes', 'bookings.pax_id', '=', 'paxes.pax_id')
+            ->leftJoin('managers', 'bookings.verified_by_manager_id', '=', 'managers.manager_id')
+            // Join the payments table to get the receipt path
+            ->leftJoin('payments', 'bookings.booking_id', '=', 'payments.booking_id')
             ->where('bookings.client_id', $clientId)
-            // We remove specific status restrictions here so ALL statuses appear in the "All" view
             ->select(
                 'bookings.*', 
                 'events.event_name', 
+                'venues.venue_name', 
+                'venues.venue_address', 
+                'paxes.pax_count',
+                'payments.receipt_path', // Fetch the specific path from payments table
+                DB::raw("CONCAT(managers.first_name, ' ', managers.last_name) as manager_full_name"),
+                DB::raw("(SELECT GROUP_CONCAT(services.service_name SEPARATOR ', ') 
+                        FROM booking_services 
+                        JOIN services ON booking_services.service_id = services.service_id 
+                        WHERE booking_services.booking_id = bookings.booking_id) as selected_services"),
                 'bookings.created_at as date_submitted'
             )
             ->orderBy('bookings.created_at', 'desc')
