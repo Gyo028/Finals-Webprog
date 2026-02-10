@@ -4,7 +4,15 @@
 --}}
 
 <div class="mgmt-hero-card" style="background: #111; color: white; padding: 40px; border-radius: 15px;">
-    <h1>Management Panel</h1>
+    <h1>
+        Welcome, 
+        @if(Auth::user()->manager)
+            {{ Auth::user()->manager->first_name }} {{ Auth::user()->manager->last_name }}
+        @else
+            Manager
+        @endif
+        to Management Dashboard
+    </h1>
     <p>Switch between managing your active bookings and your service pricing.</p>
     
     <div class="hero-tabs" style="margin-top: 20px; display: flex; gap: 20px;">

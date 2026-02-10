@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Booking\BookingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ManagementController;
+use App\Http\Controllers\Client\ClientBookingController;
 use App\Models\User;
 use App\Mail\MyEmail;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
@@ -219,6 +220,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/bookings/validate-step4', [BookingController::class, 'validateStep4'])
     ->name('bookings.validateStep4')
     ->middleware('auth');
+    
 
 /*
 |--------------------------------------------------------------------------
@@ -249,3 +251,7 @@ Route::get('/test-email', function () {
 Route::get('/booking/time-selection', function () {
     return view('Client.time-selection'); // Ensure the file is at resources/views/time-selection.blade.php
 })->name('bookings.time-selection')->middleware('auth');
+
+Route::get('/test-dashboard', function () {
+    return view('Client.client-table-appointments');
+})->name('Client.client-table-appointments');

@@ -1,0 +1,369 @@
+/* public/css/client-dashboard.css */
+
+/* GLOBAL STYLES */
+body {
+    margin: 0;
+    background-color: #f5f5f5;
+    font-family: 'Poppins', sans-serif;
+    color: #333;
+}
+
+/* HEADER */
+.top-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 60px;
+    background-color: white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.brand {
+    font-size: 1.4rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.header-btn {
+    background-color: #000;
+    color: white;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.header-btn:hover { 
+    background-color: #333; 
+}
+
+/* DASHBOARD MAIN WRAPPER */
+.dashboard {
+    max-width: 1200px;
+    margin: auto;
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+/* HERO SECTION */
+.hero {
+    position: relative;
+    background-size: cover;
+    background-position: center;
+    border-radius: 12px;
+    padding: 40px 50px; 
+    color: white;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    transition: background-image 1s ease-in-out;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    border-radius: 12px;
+}
+
+.hero-text { 
+    position: relative; 
+    z-index: 1; 
+}
+
+.hero h1 { 
+    font-size: 32px; 
+    margin: 0 0 5px 0; 
+}
+
+.hero p { 
+    font-size: 16px; 
+    margin-bottom: 20px; 
+    max-width: 450px; 
+}
+
+.primary-btn {
+    background-color: #c9a24d;
+    color: white;
+    padding: 12px 26px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.primary-btn:hover { 
+    background-color: #b18d3f; 
+}
+
+/* STAT CARDS ROW */
+.cards {
+    display: flex; 
+    gap: 25px; 
+    align-items: stretch; 
+    flex-wrap: wrap;
+}
+
+.card {
+    background-color: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    flex: 1;
+}
+
+.card.highlight { 
+    border: 2px solid #c9a24d; 
+}
+
+.card h3 { 
+    font-weight: 700; 
+    font-size: 1.1rem; 
+    color: #111;
+    margin: 0;
+}
+
+/* BOOKING ITEMS (Inside Cards) */
+.booking-list { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 12px; 
+}
+
+.booking-item {
+    background: #f9fafb;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #eee;
+}
+
+.event-name { 
+    font-weight: 600; 
+    color: #333; 
+}
+
+.booking-meta { 
+    display: flex; 
+    flex-direction: column; 
+    font-size: 13px; 
+    color: #666; 
+    gap: 2px; 
+}
+
+/* TABLE CONTAINER */
+.table-container {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    border: 1px solid #f0f0f0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+/* SEARCH BAR */
+.search-bar {
+    position: relative;
+    width: 350px;
+}
+
+.search-bar i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+}
+
+.search-bar input {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    border: 1px solid #eef0f2;
+    border-radius: 10px;
+    outline: none;
+    background-color: #fafafa;
+    font-size: 0.9rem;
+}
+
+/* TABLE TABS - Adjusted for no "All" button */
+.table-tabs {
+    background: #f1f3f5;
+    padding: 5px;
+    border-radius: 12px;
+    display: flex;
+    gap: 2px;
+}
+
+.tab-btn {
+    border: none;
+    background: transparent;
+    padding: 10px 22px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #666;
+    font-size: 13px;
+    transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+    color: #111;
+}
+
+.tab-btn.active {
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    color: #000;
+}
+
+/* STYLED TABLE */
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.styled-table th {
+    text-align: left;
+    padding: 15px;
+    color: #888;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    font-size: 0.7rem;
+    border-bottom: 2px solid #f8f9fa;
+}
+
+.styled-table td {
+    padding: 18px 15px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+/* Row Hover Effect */
+.booking-row {
+    transition: background-color 0.2s;
+}
+
+.booking-row:hover {
+    background-color: #fafafa;
+}
+
+.event-type-cell { color: #111; font-weight: 700; }
+.date-submitted small { color: #888; display: block; margin-top: 2px; }
+
+/* STATUS PILLS & BADGES */
+.status-pill, .status-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 10px;
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    min-width: 85px;
+    text-align: center;
+}
+
+/* STATUS COLORS */
+.pending { background: #fef9c3; color: #a16207; } /* Yellow */
+.approved { background: #dcfce7; color: #166534; } /* Green */
+.completed { background: #e0e7ff; color: #3730a3; } /* Indigo */
+.rejected, .denied { background: #fee2e2; color: #991b1b; } /* Red */
+
+/* CANCELLED - ORANGE THEME */
+.cancelled { 
+    background: #ffedd5; 
+    color: #9a3412; 
+    border: 1px solid #fed7aa;
+}
+
+/* DRAFT - GREY THEME */
+.draft { 
+    background: #f3f4f6; 
+    color: #4b5563; 
+    border: 1px solid #e5e7eb;
+}
+
+/* ACTION BUTTON */
+.action-btn {
+    background: #111;
+    color: white;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+.action-btn:hover { 
+    background: #333; 
+    transform: translateY(-2px); 
+}
+
+/* EMPTY STATE */
+.empty-state {
+    padding: 40px 0;
+    text-align: center;
+}
+
+/* PAGINATION STYLES */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #f1f1f1;
+}
+
+.pg-btn {
+    border: 1px solid #e0e0e0;
+    background: white;
+    color: #333;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+.pg-btn:hover {
+    background: #f8f9fa;
+    border-color: #c9a24d;
+}
+
+.pg-btn.active {
+    background: #c9a24d;
+    color: white;
+    border-color: #c9a24d;
+}
+
+.pg-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

@@ -1,4 +1,6 @@
-<!-- HEADER -->
+<link rel="stylesheet" href="{{ asset('css/client-dashboard.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
 <header class="top-header">
     <div class="brand">GR3AT A's</div>
 
@@ -8,10 +10,8 @@
     </form>
 </header>
 
-
 <div class="dashboard">
 
-    <!-- HERO / WELCOME -->
     <div class="hero" id="hero">
         <div class="hero-text">
             <h1>Welcome, {{ Auth::user()->username }}</h1>
@@ -23,12 +23,14 @@
         </div>
     </div>
 
-    <!-- DASHBOARD CARDS -->
-    <div class="cards">
+    <div class="cards" style="display: flex; gap: 25px; align-items: stretch; flex-wrap: wrap;">
 
-        <!-- COMPLETED BOOKINGS -->
-        <div class="card">
-            <h3>Completed Bookings</h3>
+        <div class="card" style="flex: 1.5; min-width: 320px; display: flex; flex-direction: column; min-height: 400px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="margin: 0;">Completed Appointments</h3>
+                <i class="fa-solid fa-check-double" style="font-size: 1.2rem; color: #333;"></i>
+            </div>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0 20px 0;">
 
             @if($completedBookings->count())
                 <div class="booking-list">
@@ -47,370 +49,262 @@
                     @endforeach
                 </div>
             @else
-                <div class="empty-state">
-                    <img src="https://cdn-icons-png.flaticon.com/512/4076/4076549.png">
-                    <p>No completed bookings yet</p>
+                {{-- Empty State with original Flaticon --}}
+                <div class="empty-state" style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/4076/4076549.png" style="width: 100px; margin-bottom: 15px; opacity: 0.8;">
+                    <p style="color: #888; font-size: 0.9rem;">There are no completed appointments</p>
                 </div>
             @endif
         </div>
 
-        <!-- NEXT BOOKING -->
-        <div class="card highlight">
-            <h3>Next Booking</h3>
+        <div class="card highlight" style="flex: 1; min-width: 320px; display: flex; flex-direction: column; min-height: 400px; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="margin: 0;">Next Appointment</h3>
+                <i class="fa-solid fa-star" style="font-size: 1.2rem; color: #c9a24d;"></i>
+            </div>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0 20px 0;">
 
             @if($nextBooking)
-
-                <div class="next-booking">
-                    <div class="next-date">
-                        {{ \Carbon\Carbon::parse($nextBooking->booking_date)->format('M d, Y') }}
-                    </div>
-
-                    <h4>{{ $nextBooking->event_name }}</h4>
-
-                    <p class="next-venue">📍 {{ $nextBooking->venue_name }}</p>
-
-                    <div class="time-pill">
-                        ⏰ {{ \Carbon\Carbon::parse($nextBooking->booking_start_time)->format('h:i A') }} - 
-                        {{ \Carbon\Carbon::parse($nextBooking->booking_end_time)->format('h:i A') }}
-                    </div>
-
-
-                    <span class="status-badge {{ $nextBooking->status }}">
-                        {{ ucfirst($nextBooking->status) }}
-                    </span>
-                </div>
-            @else
-                <div class="empty-state">
-                    <img src="https://cdn-icons-png.flaticon.com/512/4076/4076604.png">
-                    <p>No upcoming bookings</p>
-                </div>
-            @endif
-        </div>
-
-        <!-- OTHER BOOKINGS -->
-        <div class="card">
-            <h3>Other Bookings</h3>
-
-            @if($otherBookings->count())
-                <div class="booking-list">
-                    @foreach($otherBookings as $booking)
-                        <div class="booking-item">
-                            <div class="booking-header">
-                                <span class="event-name">{{ $booking->event_name }}</span>
-
-                                <span class="status-badge {{ $booking->status }}">
-                                    {{ ucfirst($booking->status) }}
-                                </span>
-                            </div>
-
-                            <div class="booking-meta">
-                                <span>📅 {{ \Carbon\Carbon::parse($booking->booking_date)->format('F d, Y') }}</span>
-                                <span>📍 {{ $booking->venue_name }}</span>
-                            </div>
-
-                            @if($booking->status === 'draft')
-                                <a href="{{ route('bookings.edit', $booking->booking_id) }}"
-                                class="edit-btn">
-                                    ✏️ Edit Draft
-                                </a>
-                            @endif
-
+                <div class="next-booking-container" style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 0;">
+                    
+                    <div class="calendar-icon-date" style="background: #fff; border: 2px solid #f0f0f0; border-radius: 12px; width: 85px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px;">
+                        <div style="background: #c9a24d; color: white; font-size: 0.75rem; font-weight: bold; padding: 4px 0; border-radius: 9px 9px 0 0; text-transform: uppercase;">
+                            {{ \Carbon\Carbon::parse($nextBooking->booking_date)->format('M') }}
                         </div>
-                    @endforeach
+                        <div style="font-size: 2rem; font-weight: bold; color: #111; padding: 8px 0;">
+                            {{ \Carbon\Carbon::parse($nextBooking->booking_date)->format('d') }}
+                        </div>
+                    </div>
+
+                    <div style="text-align: center;">
+                        <h4 style="margin: 0; font-size: 1.5rem; color: #111; font-weight: 700;">{{ $nextBooking->event_name }}</h4>
+                        <p style="margin: 8px 0; color: #666; font-size: 1rem;">📍 {{ $nextBooking->venue_name }}</p>
+                    </div>
+
+                    <div style="width: 100%; text-align: center; margin-top: 15px;">
+                        <div class="time-pill" style="background: #fdf8ed; color: #b18d3f; border: 1px solid #f9ebcd; font-weight: 600; padding: 6px 18px; display: inline-block; border-radius: 20px; font-size: 13px;">
+                            ⏰ {{ \Carbon\Carbon::parse($nextBooking->booking_start_time)->format('h:i A') }}
+                        </div>
+                        <div style="margin-top: 15px;">
+                             <span class="status-badge {{ $nextBooking->status }}" style="padding: 6px 18px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                {{ $nextBooking->status }}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             @else
-                <div class="empty-state">
-                    <p>No other bookings</p>
+                {{-- Empty State with original Flaticon --}}
+                <div class="empty-state" style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/4076/4076604.png" style="width: 100px; margin-bottom: 15px; opacity: 0.8;">
+                    <p style="color: #888; font-size: 0.9rem;">There are no next appointment</p>
                 </div>
             @endif
         </div>
 
     </div>
+</div>
 
+<div class="dashboard">
+    <div class="table-container">
+        <div class="table-header">
+            <div class="search-bar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                {{-- Updated placeholder for Event Type focus --}}
+                <input type="text" id="dashboardSearch" placeholder="Search by event type...">
+            </div>
+                <div class="table-tabs">
+                    <button class="tab-btn active" onclick="filterTable('draft', this)">Drafts</button>
+                    <button class="tab-btn" onclick="filterTable('pending', this)">Pending</button>
+                    <button class="tab-btn" onclick="filterTable('approved', this)">Approved</button>
+                    <button class="tab-btn" onclick="filterTable('denied', this)">Rejected</button>
+                    <button class="tab-btn" onclick="filterTable('cancelled', this)">Cancelled</button>
+                </div>
+            </div>
+
+        <div class="table-responsive">
+            <table class="styled-table" id="bookingsTable">
+                <thead>
+                    <tr>
+                        <th>EVENT TYPE</th> {{-- Replaced CLIENT --}}
+                        <th>DATE SUBMITTED</th>
+                        <th>REVIEWED BY</th>
+                        <th>STATUS</th>
+                        <th>ACTION</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($allBookings as $booking)
+                    <tr class="booking-row" data-status="{{ strtolower($booking->status) }}">
+                        <td class="event-type-cell">
+                            <strong>{{ $booking->event_name }}</strong>
+                        </td>
+                        <td class="date-submitted">
+                            {{ \Carbon\Carbon::parse($booking->date_submitted)->format('M d, Y') }}<br>
+                            <small>{{ \Carbon\Carbon::parse($booking->date_submitted)->format('h:i A') }}</small>
+                        </td>
+                        <td class="reviewed-by">-</td>
+                        <td>
+                            <span class="status-pill {{ strtolower($booking->status) }}">
+                                {{ strtoupper($booking->status) }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="#" class="action-btn"><i class="fa-solid fa-eye"></i></a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="styled-table" id="bookingsTable">
+        </table>
+    
+    <div id="paginationControls" class="pagination-container"></div>
 </div>
 
 @include('LandingPage.footer')
 
-<style>
-body {
-    margin: 0;
-    background-color: #f5f5f5;
-    font-family: 'Poppins', sans-serif;
-}
-
-/* HEADER */
-.top-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 18px 60px;
-    background-color: white;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
-.brand {
-    font-size: 1.5rem;
-    font-weight: bold;
-    letter-spacing: 1px;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* HEADER BUTTON */
-.header-btn {
-    background-color: #000;
-    color: white;
-    padding: 10px 24px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: 0.3s;
-}
-
-.header-btn:hover {
-    background-color: #333;
-}
-
-/* DASHBOARD */
-.dashboard {
-    max-width: 1100px;
-    margin: auto;
-    padding: 40px 30px;
-}
-
-/* HERO */
-.hero {
-    position: relative;
-    background-size: cover;
-    background-position: center;
-    border-radius: 14px;
-    padding: 60px;
-    color: white;
-    margin-bottom: 40px;
-    transition: background-image 1s ease-in-out;
-}
-
-/* Overlay for readability */
-.hero::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.45);
-    border-radius: 14px;
-}
-
-.hero-text {
-    position: relative;
-    z-index: 1;
-}
-
-
-.hero h1 {
-    font-size: 36px;
-    margin-bottom: 10px;
-}
-
-.hero p {
-    font-size: 18px;
-    margin-bottom: 25px;
-    max-width: 500px;
-}
-
-/* BUTTONS */
-.primary-btn {
-    background-color: #c9a24d;
-    color: white;
-    padding: 14px 28px;
-    border-radius: 30px;
-    text-decoration: none;
-    font-weight: 600;
-}
-
-.primary-btn:hover {
-    background-color: #b18d3f;
-}
-
-/* CARDS */
-.cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 25px;
-}
-
-.card {
-    background-color: white;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-}
-
-.card h3 {
-    margin-bottom: 20px;
-    font-weight: 600;
-}
-
-/* EMPTY STATE */
-.empty-state {
-    text-align: center;
-    color: #888;
-}
-
-.empty-state img {
-    width: 120px;
-    margin-bottom: 15px;
-    opacity: 0.8;
-}
-
-/* BOOKING LIST */
-.booking-list {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.booking-item {
-    background: #f9fafb;
-    padding: 15px;
-    border-radius: 10px;
-    border: 1px solid #eee;
-    transition: 0.2s;
-}
-
-.booking-item:hover {
-    background: #f3f4f6;
-}
-
-.booking-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.event-name {
-    font-weight: 600;
-    color: #333;
-}
-
-.booking-meta {
-    display: flex;
-    flex-direction: column;
-    font-size: 14px;
-    color: #666;
-    gap: 4px;
-}
-
-/* NEXT BOOKING CARD */
-.card.highlight {
-    border: 2px solid #c9a24d;
-}
-
-.next-booking {
-    text-align: center;
-}
-
-.next-date {
-    font-size: 14px;
-    font-weight: bold;
-    color: #c9a24d;
-    margin-bottom: 10px;
-}
-
-.next-booking h4 {
-    margin: 5px 0;
-    font-size: 20px;
-}
-
-.next-venue {
-    color: #555;
-    margin-bottom: 10px;
-}
-
-/* TIME PILL */
-.time-pill {
-    display: inline-block;
-    background: #eef2ff;
-    color: #3730a3;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 13px;
-    margin-bottom: 12px;
-}
-
-/* STATUS BADGES */
-.status-badge {
-    display: inline-block;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: bold;
-    text-transform: capitalize;
-}
-
-.status-badge.approved {
-    background: #dcfce7;
-    color: #166534;
-}
-
-.status-badge.pending {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.status-badge.denied {
-    background: #fee2e2;
-    color: #7f1d1d;
-}
-
-.status-badge.rejected {
-    background: #fee2e2;
-    color: #7f1d1d;
-}
-
-.status-badge.draft {
-    background: #e5e7eb;
-    color: #374151;
-}
-
-.edit-btn {
-    display: inline-block;
-    margin-top: 8px;
-    font-size: 13px;
-    color: #2563eb;
-    text-decoration: none;
-    font-weight: 600;
-}
-
-.edit-btn:hover {
-    text-decoration: underline;
-}
-
-
-</style>
-
 <script>
-    const hero = document.getElementById('hero');
+    // --- CONFIGURATION ---
+    const rowsPerPage = 5;
+    let currentPage = 1;
 
+    // --- HERO IMAGE SLIDER ---
+    const hero = document.getElementById('hero');
     const images = [
         "{{ asset('images/event1.jpeg') }}",
         "{{ asset('images/event2.jpg') }}",
         "{{ asset('images/event3.jpg') }}",
         "{{ asset('images/wedding.jpg') }}"
     ];
-
-    let index = 0;
+    let imageIndex = 0;
 
     function changeHeroImage() {
-        hero.style.backgroundImage =
-            `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url('${images[index]}')`;
+        if (hero && images.length > 0) {
+            hero.style.backgroundImage =
+                `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('${images[imageIndex]}')`;
+            imageIndex = (imageIndex + 1) % images.length;
+        }
+    }
+    changeHeroImage();
+    setInterval(changeHeroImage, 4000);
 
-        index = (index + 1) % images.length;
+    // --- CORE TABLE LOGIC ---
+
+    function filterTable(status, btn) {
+        const buttons = document.querySelectorAll('.tab-btn');
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        document.getElementById('bookingsTable').setAttribute('data-current-filter', status);
+
+        currentPage = 1;
+        updateTableDisplay();
     }
 
-    changeHeroImage();
-    setInterval(changeHeroImage, 3000);
-</script>
+    function updateTableDisplay() {
+        const table = document.getElementById('bookingsTable');
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(document.querySelectorAll('.booking-row'));
+        const searchTerm = document.getElementById('dashboardSearch').value.toLowerCase();
+        const activeFilter = table.getAttribute('data-current-filter') || 'draft';
 
+        // 1. Filter rows based on Status AND (Event Type OR Date)
+        const filteredRows = rows.filter(row => {
+            const rowStatus = row.getAttribute('data-status').toLowerCase();
+            
+            // Get content for searching
+            const eventName = row.querySelector('.event-type-cell').innerText.toLowerCase();
+            const dateText = row.querySelector('.date-submitted').innerText.toLowerCase();
+            
+            const matchesStatus = (rowStatus === activeFilter);
+            
+            // Functional Search: Checks Event Name OR Date
+            const matchesSearch = eventName.includes(searchTerm) || dateText.includes(searchTerm);
+            
+            return matchesStatus && matchesSearch;
+        });
+
+        // 2. Hide ALL rows and remove any existing "No Results" message
+        rows.forEach(row => row.style.display = "none");
+        const existingNoResults = document.getElementById('no-results-row');
+        if (existingNoResults) existingNoResults.remove();
+
+        // 3. Handle Empty State
+        if (filteredRows.length === 0) {
+            const noResultsRow = document.createElement('tr');
+            noResultsRow.id = 'no-results-row';
+            noResultsRow.innerHTML = `<td colspan="5" style="text-align:center; padding: 40px; color: #999;">No bookings found matching your criteria.</td>`;
+            tbody.appendChild(noResultsRow);
+            renderPagination(0);
+            return;
+        }
+
+        // 4. Calculate Pagination
+        const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        const paginatedRows = filteredRows.slice(start, end);
+
+        // 5. Show results
+        paginatedRows.forEach(row => row.style.display = "");
+
+        renderPagination(totalPages);
+    }
+
+    function renderPagination(totalPages) {
+        let container = document.getElementById('paginationControls');
+        if (!container) {
+            const tableWrap = document.querySelector('.table-responsive');
+            container = document.createElement('div');
+            container.id = 'paginationControls';
+            container.className = 'pagination-container';
+            tableWrap.after(container);
+        }
+
+        container.innerHTML = "";
+        if (totalPages <= 1) return;
+
+        const prevBtn = document.createElement('button');
+        prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+        prevBtn.className = 'pg-btn';
+        prevBtn.disabled = (currentPage === 1);
+        prevBtn.onclick = () => { currentPage--; updateTableDisplay(); };
+        container.appendChild(prevBtn);
+
+        for (let i = 1; i <= totalPages; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.innerText = i;
+            pageBtn.className = `pg-btn ${i === currentPage ? 'active' : ''}`;
+            pageBtn.onclick = () => { currentPage = i; updateTableDisplay(); };
+            container.appendChild(pageBtn);
+        }
+
+        const nextBtn = document.createElement('button');
+        nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+        nextBtn.className = 'pg-btn';
+        nextBtn.disabled = (currentPage === totalPages);
+        nextBtn.onclick = () => { currentPage++; updateTableDisplay(); };
+        container.appendChild(nextBtn);
+    }
+
+    // --- SEARCH LOGIC ---
+    document.getElementById('dashboardSearch').addEventListener('keyup', function() {
+        currentPage = 1; 
+        updateTableDisplay();
+    });
+
+    // --- INITIALIZE ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const activeBtn = document.querySelector('.tab-btn.active');
+        if (activeBtn) {
+            // Extracts 'draft' from onclick="filterTable('draft', this)"
+            const status = activeBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
+            filterTable(status, activeBtn);
+        }
+    });
+</script>
