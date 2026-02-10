@@ -24,36 +24,56 @@
 </main>
 
 <!-- FEATURES / SERVICES SECTION -->
-<section class="features" id="features" style="display:flex; flex-wrap:wrap; gap:2rem; justify-content:center; padding:4rem 2rem;">
-    <div class="feature" data-modal="venueModal" style="flex:1 1 250px; background:#fff; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.1); padding:2rem; transition: transform 0.3s;">
-        <h3>Complete Venue Styling</h3>
-        <p>
-            We take care of every detail from concept to final setup, ensuring your venue
-            is styled perfectly for your event.
-        </p>
+<section class="features" id="features">
+    <div class="feature-card">
+        <img src="{{ asset('images/event1.jpeg') }}" alt="Complete Venue Styling">
+        <div class="feature-content">
+            <h3>Complete Venue Styling</h3>
+            <p>
+                We take care of every detail from concept to final setup.
+                From furniture and lighting to decor accents, everything
+                is styled to create a cohesive and stunning atmosphere.
+            </p>
+        </div>
     </div>
 
-    <div class="feature" data-modal="themeModal" style="flex:1 1 250px; background:#fff; border-radius:16px; border:2px solid rgba(212,165,116,0.3); padding:2rem; transition: transform 0.3s;">
-        <h3>Personalized Themes</h3>
-        <p>
-            Each event is tailored to your style and vision, making your celebration truly unique.
-        </p>
+    <div class="feature-card">
+        <img src="{{ asset('images/photo5.jpg') }}" alt="Personalized Themes">
+        <div class="feature-content">
+            <h3>Personalized Themes</h3>
+            <p>
+                Every event is tailored to your style and vision.
+                Colors, motifs, and layouts are customized to make
+                your celebration truly one-of-a-kind.
+            </p>
+        </div>
     </div>
 
-    <div class="feature" data-modal="scheduleModal" style="flex:1 1 250px; background:#fff; border-radius:16px; box-shadow:0 8px 24px rgba(26,26,26,0.08); padding:2rem; transition: transform 0.3s;">
-        <h3>Professional Scheduling</h3>
-        <p>
-            Clear, detailed timelines and structured schedules for your event.
-        </p>
+    <div class="feature-card">
+        <img src="{{ asset('images/photo2.jpg') }}" alt="Professional Scheduling">
+        <div class="feature-content">
+            <h3>Professional Scheduling</h3>
+            <p>
+                Clear, detailed timelines and structured schedules
+                from setup to execution—so your event runs smoothly
+                and stress-free.
+            </p>
+        </div>
     </div>
 
-    <div class="feature" data-modal="packagesModal" style="flex:1 1 250px; background:#fff; border-radius:16px; border:2px solid rgba(212,165,116,0.3); padding:2rem; transition: transform 0.3s;">
-        <h3>Flexible Packages</h3>
-        <p>
-            Packages designed to fit your budget, needs, and scale of event, fully customizable.
-        </p>
+    <div class="feature-card">
+        <img src="{{ asset('images/photo4.jpeg') }}" alt="Flexible Packages">
+        <div class="feature-content">
+            <h3>Flexible Packages</h3>
+            <p>
+                Packages designed to fit your budget and event scale.
+                Fully customizable services without compromising
+                quality or style.
+            </p>
+        </div>
     </div>
 </section>
+
 
 <!-- MODALS -->
 <div id="venueModal" class="modal">
