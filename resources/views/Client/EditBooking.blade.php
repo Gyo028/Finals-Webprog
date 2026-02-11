@@ -1,20 +1,12 @@
+<link rel="stylesheet" href="{{ asset('css/client-edit-booking.css') }}">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
 <div class="booking-container">
-    <h2>Edit Booking</h2>
-    
-    {{-- BACK BUTTON --}}
-    <a href="{{ route('client.dashboard') }}" class="back-btn">← Back to Dashboard</a>
+    <h2>Book a New Event</h2>
+    <a href="{{ route('dashboard') }}" class="back-btn">← Back to Dashboard</a>
 
-    {{-- DENIED REMARKS --}}
-    {{-- Checks if the booking was denied and displays the admin's reason from the database --}}
-    @if($booking->status === 'denied' && !empty($booking->remarks))
-        <div class="denied-box">
-            <strong>⚠️ Reason for Rejection:</strong>
-            <p>{{ $booking->remarks }}</p>
-            <small>Please correct the details below and resubmit for approval.</small>
-        </div>
-    @endif
+    <div id="serverErrors" class="error-box" style="display:none;"></div>
 
-    {{-- ERROR MESSAGES --}}
     @if ($errors->any())
         <div class="error-box">
             <ul>
@@ -26,295 +18,520 @@
     @endif
 
     <form id="bookingForm"
-          action="{{ route('bookings.update', $booking->booking_id) }}"
-          method="POST"
-          enctype="multipart/form-data">
-
+        action="{{ route('bookings.update', $booking->booking_id) }}"
+        method="POST"
+        enctype="multipart/form-data">
         @csrf
-        @method('PUT')
+        
+    <!-- STEP INDICATOR -->
+    <div class="step-indicator">
+        <div class="step active">1</div>
+        <div class="step">2</div>
+        <div class="step">3</div>
+        <div class="step">4</div>
+    </div>
 
-        {{-- Hidden status field: 'draft' or 'pending' --}}
-        <input type="hidden" name="status" id="form-status" value="pending">
+    <!-- STEP 1 -->
+    <div class="form-step active">
+        <h3>Step 1: Event & Guests</h3>
 
-        {{-- EVENT SELECTION --}}
+        <!-- EVENT TYPE -->
         <div class="form-group">
-            <label>What kind of event?</label>
-            <select name="event_id" id="event_id" onchange="updateTotal()">
-                <option value="">-- Choose an Event --</option>
+            <label>Choose what kind of event</label>
+
+            <div class="option-grid" id="eventOptions">
                 @foreach($eventTypes as $event)
-                    <option value="{{ $event->event_id }}"
+                <div class="option-card {{ $booking->event_id == $event->event_id ? 'active' : '' }}"
+                        data-id="{{ $event->event_id }}"
                         data-price="{{ $event->event_base_price }}"
-                        {{ $booking->event_id == $event->event_id ? 'selected' : '' }}>
-                        {{ $event->event_name }} (₱{{ number_format($event->event_base_price, 2) }})
-                    </option>
+                        onclick="selectEvent(this)">
+                        <h4>{{ $event->event_name }}</h4>
+                        <p>₱{{ number_format($event->event_base_price, 2) }}</p>
+                    </div>
                 @endforeach
-            </select>
+            </div>
+
+            <!-- Hidden input (important) -->
+            <input type="hidden" name="event_id" id="event_id" value="{{ $booking->event_id }}">
         </div>
 
-        {{-- PAX SELECTION --}}
+        <!-- GUEST COUNT -->
         <div class="form-group">
-            <label>Number of Guests (Pax Package)</label>
-            <select name="pax_id" id="pax_id" onchange="updateTotal()">
-                <option value="">-- Select Guest Count --</option>
+            <label>Choose number of guests</label>
+
+            <div class="option-grid" id="paxOptions">
                 @foreach($paxOptions as $pax)
-                    <option value="{{ $pax->pax_id }}"
+                <div class="option-card {{ $booking->pax_id == $pax->pax_id ? 'active' : '' }}"
+                        data-id="{{ $pax->pax_id }}"
                         data-price="{{ $pax->pax_price }}"
-                        {{ $booking->pax_id == $pax->pax_id ? 'selected' : '' }}>
-                        {{ $pax->pax_count }} Pax (+₱{{ number_format($pax->pax_price, 2) }})
-                    </option>
+                        onclick="selectPax(this)">
+                        <h4>{{ $pax->pax_count }} Pax</h4>
+                        <p>+ ₱{{ number_format($pax->pax_price, 2) }}</p>
+                    </div>
                 @endforeach
-            </select>
+            </div>
+
+            <!-- Hidden input -->
+            <input type="hidden" name="pax_id" id="pax_id" value="{{ $booking->pax_id }}">
         </div>
 
-        {{-- SERVICES SECTION --}}
-        {{-- Pre-checks checkboxes based on the booking_services junction table --}}
+        <div class="step-buttons">
+            <button type="button" class="next-btn" onclick="nextStep()">Next</button>
+        </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="form-step">
+        <h3>Step 2: Venue & Services</h3>
+
         <div class="form-group">
-            <label>Additional Services</label>
-            <div class="services-grid">
+            <label>Enter the Name of the Venue</label>
+            <input type="text" name="venue_name" id="venue_name">
+        </div>
+
+        <div class="form-group" style="position: relative;">
+            <label>Enter the Address of the Venue (Select from the suggestions)</label>
+            <input type="text" id="address-search" placeholder="Search address..." autocomplete="off">
+            <div id="results-list" class="results-list"></div>
+            <input type="hidden" name="venue_address" id="final-address">
+        </div>
+
+        <div class="form-group">
+        <label>Click the checkbox for Additional Services</label>
+
+        <div class="option-grid" id="serviceOptions">
                 @foreach($services as $service)
-                    <div class="service-item">
-                        <input type="checkbox" name="service_id[]" 
-                               value="{{ $service->service_id }}" 
-                               class="service-checkbox"
-                               data-price="{{ $service->service_price }}"
-                               {{ in_array($service->service_id, $selectedServices) ? 'checked' : '' }}
-                               onchange="updateTotal()">
-                        <span>{{ $service->service_name }} (+₱{{ number_format($service->service_price, 2) }})</span>
+                    @php
+                        $isSelected = in_array($service->service_id, $selectedServices);
+                    @endphp
+
+                    <div class="option-card service-card {{ $isSelected ? 'active' : '' }}"
+                        data-id="{{ $service->service_id }}"
+                        data-price="{{ $service->service_price }}"
+                        onclick="toggleService(this)">
+
+                        <h4>{{ $service->service_name }}</h4>
+                        <p>+ ₱{{ number_format($service->service_price, 2) }}</p>
+
+                        <input type="checkbox"
+                            name="service_id[]"
+                            value="{{ $service->service_id }}"
+                            data-price="{{ $service->service_price }}"
+                            {{ $isSelected ? 'checked' : '' }}
+                            hidden>
                     </div>
                 @endforeach
             </div>
         </div>
 
-        {{-- VENUE DETAILS --}}
-        <div class="form-group">
-            <label>Venue Name</label>
-            <input type="text" name="venue_name" value="{{ old('venue_name', $booking->venue_name) }}">
+        <div class="step-buttons">
+            <button type="button" class="btn-back" onclick="prevStep()">Back</button>
+            <button type="button" class="btn-next" onclick="nextStep()">Next</button>
         </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="form-step">
+        <h3>Step 3: Date & Time</h3>
 
         <div class="form-group">
-            <label>Venue Address</label>
-            <input type="text" name="venue_address" value="{{ old('venue_address', $booking->venue_address) }}">
-        </div>
-
-        {{-- DATE AND TIME --}}
-        <div class="form-group">
-            <label>Event Date</label>
-            <input type="date" name="event_date" value="{{ $booking->booking_date }}">
+            <label>Choose the Date & Time of the Event</label>
+            @include('Client.time-selection')
+            <input type="date" name="event_date" id="event_date" hidden>
         </div>
 
         <div class="form-row">
             <div class="form-group">
-                <label>Start Time</label>
-                <input type="time" name="event_time" value="{{ $booking->booking_start_time }}">
+                <input type="time" name="event_time" id="event_time" hidden>
             </div>
             <div class="form-group">
-                <label>End Time</label>
-                <input type="time" name="booking_end_time" value="{{ $booking->booking_end_time }}">
+                <input type="time" name="booking_end_time" id="booking_end_time" hidden>
             </div>
         </div>
 
-        {{-- RECEIPT UPLOAD --}}
-        {{-- Displays existing proof of payment from the payments table --}}
-        <div class="form-group receipt-section">
-            <label for="receipt">Proof of Payment (Receipt)</label>
-            <input type="file" name="receipt" id="receipt" accept="image/*,.pdf">
-            
-            @if(!empty($booking->payment->receipt_path))
-                <div class="current-receipt">
-                    <p>Current receipt uploaded:</p>
-                    <img src="{{ asset($booking->payment->receipt_path) }}" alt="Receipt" style="max-width: 150px; border-radius: 5px;">
-                    <br>
-                    <small>Leave empty to keep this receipt, or upload a new one to replace it.</small>
-                </div>
-            @endif
+        <div class="step-buttons">
+            <button type="button" class="btn-back" onclick="prevStep()">Back</button>
+            <button type="button" class="btn-next" onclick="nextStep()">Next</button>
+        </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="form-step">
+        <h3>Step 4: Payment</h3>
+
+        <!-- PAYMENT INSTRUCTIONS WITH ICONS -->
+        <div class="payment-instructions">
+            <h4>How to Pay:</h4>
+            <ul>
+                <li>
+                    <span class="icon">💳</span>
+                    Use your online banking app to transfer the total.
+                </li>
+                <li>
+                    <span class="icon">📸</span>
+                    Take a screenshot or download the payment receipt.
+                </li>
+                <li>
+                    <span class="icon">📁</span>
+                    Upload the receipt using the field below.
+                </li>
+            </ul>
+            <p class="note"><strong>Note:</strong> Only image files (JPG, PNG) or PDF are accepted.</p>
         </div>
 
-        {{-- TOTAL CALCULATION --}}
-        <div class="form-group total-box">
-            <label>Estimated Total</label>
+        <!-- CUSTOM FILE INPUT -->
+        <div class="form-group">
+            <label for="receipt">Upload Proof of Payment</label>
+            <div class="custom-file-input">
+                <input type="file" name="receipt" id="receipt" accept="image/*,.pdf">
+                <span class="file-label">Choose file</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Total</label>
             <input type="text" id="display_total" readonly class="readonly-input">
             <input type="hidden" name="total_amount" id="total_amount">
         </div>
 
-        {{-- ACTION BUTTONS --}}
         <div class="button-row">
-            <button type="button" onclick="submitAs('draft')" class="draft-btn">
-                Save as Draft
-            </button>
-            <button type="button" onclick="submitAs('pending')" class="submit-btn">
-                @if($booking->status === 'denied') Resubmit Booking @else Update & Submit @endif
-            </button>
+            <button type="button" class="draft-btn" onclick="submitDraft()">Save as Draft</button>
+            <button type="button" class="submit-btn" onclick="openConfirmation()">Submit Booking</button>
         </div>
+
+        <div class="step-buttons">
+            <button type="button" class="btn-back" onclick="prevStep()">Back</button>
+        </div>
+    </div>
+
+
+
     </form>
+
+</div>
+
+<div id="confirmModal" class="modal-overlay">
+    <div class="modal-card">
+        <h3>Confirm Booking Details</h3>
+        <div id="modalSummary" class="modal-summary"></div>
+        <div class="modal-actions">
+            <button type="button" class="cancel-btn" onclick="closeConfirmation()">Edit Details</button>
+            <button type="button" class="confirm-btn" onclick="submitFinal()">Confirm & Pay</button>
+        </div>
+    </div>
 </div>
 
 <script>
-    /**
-     * Calculates the live total based on event, pax, and selected services
-     */
-    function updateTotal() {
-        const eventSelect = document.getElementById('event_id');
-        const paxSelect = document.getElementById('pax_id');
-        const serviceCheckboxes = document.querySelectorAll('.service-checkbox:checked');
+    window.routes = {
+        validateStep: "{{ route('bookings.validateStep') }}",
+        validateStep4: "{{ route('bookings.validateStep4') }}",
+        draft: "{{ route('bookings.draft') }}"
+    };
 
-        let total = 0;
-
-        // 1. Event Base Price
-        total += parseFloat(eventSelect.selectedOptions[0]?.dataset.price || 0);
-
-        // 2. Pax Price
-        total += parseFloat(paxSelect.selectedOptions[0]?.dataset.price || 0);
-
-        // 3. Add-on Services Price
-        serviceCheckboxes.forEach(cb => {
-            total += parseFloat(cb.dataset.price || 0);
-        });
-
-        // 4. Update UI Display
-        document.getElementById('display_total').value = 
-            "₱" + total.toLocaleString(undefined, { minimumFractionDigits: 2 });
-        document.getElementById('total_amount').value = total;
-    }
-
-    /**
-     * Sets the hidden status value before form submission
-     */
-    function submitAs(status) {
-        document.getElementById('form-status').value = status;
-        
-        // Basic validation check before submitting as 'Pending'
-        if (status === 'pending') {
-            const date = document.querySelector('input[name="event_date"]').value;
-            if (!date) {
-                alert("Please select an event date before submitting for approval.");
-                return;
-            }
-        }
-        
-        document.getElementById('bookingForm').submit();
-    }
-
-    // Initialize the total calculation on page load
-    document.addEventListener('DOMContentLoaded', updateTotal);
+    window.csrfToken = "{{ csrf_token() }}";
 </script>
 
-<style>
-    /* Styling for the Edit Booking Container */
-    .booking-container {
-        max-width: 600px;
-        margin: 40px auto;
-        padding: 30px;
-        border-radius: 12px;
-        background: #fff;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
 
-    h2 { color: #2c3e50; margin-bottom: 5px; }
+<script>
     
-    .back-btn {
-        display: inline-block;
-        margin-bottom: 20px;
-        color: #3498db;
-        text-decoration: none;
-        font-size: 14px;
-        font-weight: 600;
+    function toggleService(card) {
+    const checkbox = card.querySelector('input[type="checkbox"]');
+
+    checkbox.checked = !checkbox.checked;
+    card.classList.toggle('active', checkbox.checked);
+
+    updateTotal();
+}
+
+let selectedEventPrice = 0;
+let selectedPaxPrice = 0;
+
+function selectEvent(card) {
+    document.querySelectorAll('#eventOptions .option-card')
+        .forEach(c => c.classList.remove('active'));
+
+    card.classList.add('active');
+
+    document.getElementById('event_id').value = card.dataset.id;
+    selectedEventPrice = parseFloat(card.dataset.price);
+
+    updateTotal();
+}
+
+function selectPax(card) {
+    document.querySelectorAll('#paxOptions .option-card')
+        .forEach(c => c.classList.remove('active'));
+
+    card.classList.add('active');
+
+    document.getElementById('pax_id').value = card.dataset.id;
+    selectedPaxPrice = parseFloat(card.dataset.price);
+
+    updateTotal();
+}
+
+function isDateAtLeastOneMonth() {
+    const dateInput = document.querySelector('input[name="event_date"]');
+    const selectedDate = new Date(dateInput.value);
+    const minDate = new Date();
+    minDate.setMonth(minDate.getMonth() + 1);
+
+    if (selectedDate < minDate) {
+        alert("⚠ Bookings must be made at least 1 month in advance.");
+        dateInput.focus();
+        return false;
+    }
+    return true;
+}
+
+function updateTotal() {
+    let servicesPrice = 0;
+
+    const checkedServices = document.querySelectorAll('input[name="service_id[]"]:checked');
+    checkedServices.forEach(cb => {
+        servicesPrice += parseFloat(cb.dataset.price) || 0;
+    });
+
+    const total = selectedEventPrice + selectedPaxPrice + servicesPrice;
+
+    const display = document.getElementById('display_total');
+    const hiddenTotal = document.getElementById('total_amount');
+
+    if (display) {
+        display.value = "₱" + total.toLocaleString(undefined, {
+            minimumFractionDigits: 2
+        });
     }
 
-    /* Red box for admin denial remarks */
-    .denied-box {
-        background: #fff5f5;
-        border-left: 5px solid #f56565;
-        padding: 15px;
-        margin-bottom: 20px;
-        border-radius: 4px;
-        color: #c53030;
+    if (hiddenTotal) {
+        hiddenTotal.value = total;
+    }
+}
+
+const form = document.getElementById('bookingForm');
+const modal = document.getElementById('confirmModal');
+
+async function openConfirmation() {
+    const step4Data = new FormData();
+    step4Data.append('receipt', document.getElementById('receipt').files[0]);
+    step4Data.append('booking_end_time', document.getElementById('booking_end_time').value);
+    step4Data.append('total_amount', document.getElementById('total_amount').value);
+
+    try {
+        const response = await fetch(window.routes.validateStep4, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': window.csrfToken
+            },
+            body: step4Data
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            showErrors(result.errors);
+            return;
+        }
+
+        const eventCard = document.querySelector('#eventOptions .option-card.active');
+        const paxCard = document.querySelector('#paxOptions .option-card.active');
+
+        const event = eventCard ? eventCard.querySelector('h4').innerText : '—';
+        const pax = paxCard ? paxCard.querySelector('h4').innerText : '—';
+
+        const venue = document.getElementById('venue_name').value;
+        const date = document.querySelector('input[name="event_date"]').value;
+        const startTime = document.getElementById('event_time').value;
+        const endTime = document.getElementById('booking_end_time').value;
+        const total = document.getElementById('display_total').value;
+
+        document.getElementById('modalSummary').innerHTML = `
+            <p><strong>Event:</strong> ${event}</p>
+            <p><strong>Guests:</strong> ${pax}</p>
+            <p><strong>Venue:</strong> ${venue}</p>
+            <p><strong>Date:</strong> ${date}</p>
+            <p><strong>Duration:</strong> ${startTime} - ${endTime}</p>
+            <p class="total-highlight"><strong>Total: ${total}</strong></p>
+        `;
+
+        modal.style.display = 'flex';
+
+    } catch (error) {
+        console.error(error);
+        alert("Something went wrong while validating your payment. Please try again.");
+    }
+}
+
+function closeConfirmation() {
+    modal.style.display = 'none';
+}
+
+function submitFinal() {
+    // Add PUT method before submitting
+    let methodInput = document.createElement('input');
+    methodInput.type = 'hidden';
+    methodInput.name = '_method';
+    methodInput.value = 'PUT';
+    form.appendChild(methodInput);
+
+    form.submit();
+}   
+
+
+function submitDraft() {
+    form.action = window.routes.draft;
+    document.getElementById('receipt').required = false;
+    document.getElementById('booking_end_time').required = false;
+    form.submit();
+}
+
+// ---------------- GEOAPIFY ----------------
+
+const searchInput = document.getElementById('address-search');
+const resultsList = document.getElementById('results-list');
+const finalAddressInput = document.getElementById('final-address');
+
+const apiKey = "747dc71e45294e16ac66ec0940d2db9c";
+
+searchInput.addEventListener('input', function () {
+    const text = this.value;
+
+    if (text.length < 3) {
+        resultsList.style.display = 'none';
+        return;
     }
 
-    .form-group { margin-bottom: 18px; }
-    .form-row { display: flex; gap: 15px; }
-    .form-row .form-group { flex: 1; }
-    
-    label { display: block; margin-bottom: 8px; font-weight: 600; color: #4a5568; }
+    fetch(`https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(text)}&apiKey=${apiKey}`)
+        .then(response => response.json())
+        .then(result => {
+            resultsList.innerHTML = "";
 
-    input, select {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #cbd5e0;
-        border-radius: 6px;
-        font-size: 15px;
+            if (result.features && result.features.length > 0) {
+                resultsList.style.display = 'block';
+
+                result.features.forEach(feature => {
+                    const address = feature.properties.formatted;
+
+                    const item = document.createElement('div');
+                    item.className = 'result-item';
+                    item.innerText = address;
+
+                    item.addEventListener('click', function () {
+                        searchInput.value = address;
+                        finalAddressInput.value = address;
+                        resultsList.style.display = 'none';
+                    });
+
+                    resultsList.appendChild(item);
+                });
+            } else {
+                resultsList.style.display = 'none';
+            }
+        })
+        .catch(err => console.error(err));
+});
+
+document.addEventListener('click', function (e) {
+    if (!searchInput.contains(e.target)) {
+        resultsList.style.display = 'none';
+    }
+});
+
+// ---------------- STEPS ----------------
+
+let currentStep = 0;
+const steps = document.querySelectorAll(".form-step");
+const indicators = document.querySelectorAll(".step");
+
+function showStep(index) {
+    steps.forEach((step, i) => {
+        step.classList.toggle("active", i === index);
+        indicators[i].classList.toggle("active", i === index);
+    });
+}
+
+async function nextStep() {
+    const stepData = new FormData(form);
+    stepData.append('step', currentStep);
+
+    const response = await fetch(window.routes.validateStep, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': window.csrfToken
+        },
+        body: stepData
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        showErrors(result.errors);
+        return;
     }
 
-    /* Grid for additional services */
-    .services-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        background: #f7fafc;
-        padding: 15px;
-        border: 1px solid #edf2f7;
-        border-radius: 8px;
-    }
+    clearErrors();
+    currentStep++;
+    showStep(currentStep);
+}
 
-    .service-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-    .service-item input { width: auto; }
 
-    /* Receipt preview section */
-    .receipt-section { border-top: 1px solid #edf2f7; padding-top: 20px; margin-top: 20px; }
-    .current-receipt { margin: 10px 0; font-size: 13px; }
+function prevStep() {
+    clearErrors();
+    currentStep--;
+    showStep(currentStep);
+}
 
-    /* Total calculation box */
-    .total-box {
-        background: #f0fff4;
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px solid #c6f6d5;
-        margin-top: 25px;
-    }
+showStep(currentStep);
 
-    .readonly-input {
-        background: transparent;
-        border: none;
-        font-size: 22px;
-        color: #27ae60;
-        font-weight: 800;
-        text-align: right;
-    }
+function showErrors(errors) {
+    const box = document.getElementById('serverErrors');
 
-    .button-row { display: flex; gap: 12px; margin-top: 25px; }
+    box.innerHTML = `
+        <ul>
+            ${Object.values(errors)
+                .flat()
+                .map(msg => `<li>${msg}</li>`)
+                .join('')}
+        </ul>
+    `;
 
-    .submit-btn {
-        flex: 2;
-        padding: 14px;
-        background: #27ae60;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: background 0.2s;
-    }
+    box.style.display = 'block';
+    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
 
-    .draft-btn {
-        flex: 1;
-        padding: 14px;
-        background: #718096;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        font-weight: bold;
-        cursor: pointer;
-    }
+function clearErrors() {
+    const box = document.getElementById('serverErrors');
+    box.innerHTML = '';
+    box.style.display = 'none';
+}
 
-    .submit-btn:hover { background: #219150; }
-    .draft-btn:hover { background: #4a5568; }
+document.addEventListener('DOMContentLoaded', function () {
 
-    .error-box {
-        background: #fff5f5;
-        color: #c53030;
-        padding: 12px;
-        border-radius: 6px;
-        margin-bottom: 20px;
-        font-size: 14px;
-    }
-</style>
+// ---------- INIT EVENT ----------
+const activeEvent = document.querySelector('#eventOptions .option-card.active');
+if (activeEvent) {
+    selectedEventPrice = parseFloat(activeEvent.dataset.price) || 0;
+}
+
+// ---------- INIT PAX ----------
+const activePax = document.querySelector('#paxOptions .option-card.active');
+if (activePax) {
+    selectedPaxPrice = parseFloat(activePax.dataset.price) || 0;
+}
+
+updateTotal();
+
+// ---------- FILE INPUT ----------
+const fileInput = document.getElementById('receipt');
+const fileLabel = document.querySelector('.custom-file-input .file-label');
+
+if (fileInput && fileLabel) {
+    fileInput.addEventListener('change', function () {
+        fileLabel.textContent = this.files[0]
+            ? this.files[0].name
+            : 'Choose file';
+    });
+}
+});
+
+</script>
