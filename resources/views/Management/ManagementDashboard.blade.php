@@ -1,17 +1,9 @@
-{{-- 
-    Main interface for administrators to view, search, and filter 
-    client bookings. Includes status-based filtering (Pending, 
-    Approved, Rejected, Cancelled) and AJAX-driven live search.
---}}
-
 <link rel="stylesheet" href="{{ asset('css/management.css') }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
 <div class="mgmt-wrap">
-
     @include('management.partials.stats-cards')
 
-    {{-- BOOKINGS SECTION --}}
     <div class="mgmt-section">
         <div class="mgmt-section-head" style="display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-bottom: 15px;">
             
@@ -21,9 +13,7 @@
                     <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #888; font-size: 14px;"></i>
                     <input type="text" id="dynamicSearch" name="search" value="{{ request('search') }}" 
                         placeholder="Search by client name..." 
-                        style="width: 100%; padding: 10px 40px 10px 42px; border-radius: 10px; border: 1px solid #e5e5e5; font-size: 14px; outline: none; transition: all 0.2s ease-in-out; background-color: #fff;"
-                        onfocus="this.style.borderColor='#000'; this.style.boxShadow='0 0 0 1px #000';"
-                        onblur="this.style.borderColor='#e5e5e5'; this.style.boxShadow='none';">
+                        style="width: 100%; padding: 10px 40px 10px 42px; border-radius: 10px; border: 1px solid #e5e5e5; font-size: 14px; outline: none; transition: all 0.2s ease-in-out; background-color: #fff;">
                 </div>
             </div>
 
@@ -32,20 +22,16 @@
                 <form method="GET" action="{{ route('management.dashboard') }}" id="filterForm" style="margin: 0;">
                     <input type="hidden" name="tab" value="{{ request('tab', 'bookings') }}">
                     <div class="mgmt-filter-button-group">
-                        <input type="radio" name="status" id="status_pending" value="pending" 
-                            onchange="this.form.submit()" {{ request('status', 'pending') == 'pending' ? 'checked' : '' }}>
+                        <input type="radio" name="status" id="status_pending" value="pending" onchange="this.form.submit()" {{ request('status', 'pending') == 'pending' ? 'checked' : '' }}>
                         <label for="status_pending">Pending</label>
 
-                        <input type="radio" name="status" id="status_approved" value="approved" 
-                            onchange="this.form.submit()" {{ request('status') == 'approved' ? 'checked' : '' }}>
+                        <input type="radio" name="status" id="status_approved" value="approved" onchange="this.form.submit()" {{ request('status') == 'approved' ? 'checked' : '' }}>
                         <label for="status_approved">Approved</label>
 
-                        <input type="radio" name="status" id="status_denied" value="denied" 
-                            onchange="this.form.submit()" {{ request('status') == 'denied' ? 'checked' : '' }}>
+                        <input type="radio" name="status" id="status_denied" value="denied" onchange="this.form.submit()" {{ request('status') == 'denied' ? 'checked' : '' }}>
                         <label for="status_denied">Rejected</label>
 
-                        <input type="radio" name="status" id="status_cancelled" value="cancelled" 
-                            onchange="this.form.submit()" {{ request('status') == 'cancelled' ? 'checked' : '' }}>
+                        <input type="radio" name="status" id="status_cancelled" value="cancelled" onchange="this.form.submit()" {{ request('status') == 'cancelled' ? 'checked' : '' }}>
                         <label for="status_cancelled">Cancelled</label>
                     </div>
                 </form>
@@ -59,8 +45,8 @@
                 <thead>
                     <tr>
                         <th class="text-left" style="width: 20%;">CLIENT</th>
-                        <th class="text-left" style="width: 20%;">DATE SUBMITTED</th>
-                        <th class="text-center" style="width: 20%;">REVIEWED BY</th> {{-- NEW COLUMN --}}
+                        <th class="text-left" style="width: 20%;">DATE SUBMITTED (PHT)</th>
+                        <th class="text-center" style="width: 20%;">REVIEWED BY</th>
                         <th class="text-center" style="width: 20%;">STATUS</th>
                         <th class="text-right" style="width: 20%;">ACTION</th>
                     </tr>
@@ -83,7 +69,6 @@
                                 </small>
                             </td>
 
-                            {{-- NEW COLUMN: MANAGER NAME --}}
                             <td class="text-center">
                                 @if($booking->manager)
                                     <span style="font-weight: 500; color: #334155;">
@@ -96,20 +81,12 @@
 
                             <td class="text-center">
                                 <span class="mgmt-badge {{ $booking->status }}">
-                                    @if($booking->status === 'denied')
-                                        Rejected
-                                    @elseif($booking->status === 'cancelled')
-                                        Cancelled
-                                    @else
-                                        {{ ucfirst($booking->status) }}
-                                    @endif
+                                    {{ $booking->status === 'denied' ? 'Rejected' : ucfirst($booking->status) }}
                                 </span>
                             </td>
 
                             <td class="text-right">
-                                <button
-                                    class="btn-view-booking"
-                                    onclick="openBookingModal(this)"
+                                <button class="btn-view-booking" onclick="openBookingModal(this)"
                                     data-id="{{ $bid }}"
                                     data-status="{{ $booking->status }}"
                                     data-client="{{ $booking->client->first_name ?? 'N/A' }} {{ $booking->client->last_name ?? '' }}"
@@ -124,15 +101,14 @@
                                     data-receipt="{{ $booking->payments->first()->receipt_path ?? '' }}"
                                     data-remarks="{{ $booking->verification_remarks ?? '' }}"
                                     data-total="₱{{ number_format($booking->total_price, 2) }}"
-                                    title="View Booking"
-                                >
+                                    title="View Booking">
                                     <i class="fa-solid fa-eye"></i>
                                 </button>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5"> {{-- Updated colspan to 5 --}}
+                            <td colspan="5">
                                 <div class="empty-state" style="padding: 40px; text-align: center; color: #888;">
                                     <i class="fa-solid fa-box-open" style="font-size: 30px; margin-bottom: 10px;"></i>
                                     <p>No results found.</p>
@@ -144,12 +120,12 @@
             </table>
         </div>
 
-        <div class="mgmt-pagination-wrapper" id="paginationWrapper" style="margin-top: 20px;">
+        {{-- PAGINATION --}}
+        <div class="mgmt-pagination-wrapper" id="paginationWrapper">
             {{ $bookings->appends(request()->query())->links('pagination::bootstrap-5') }}
         </div>
     </div>
 </div>
 
 @include('management.partials.booking-modal')
-
 <script src="{{ asset('js/management/bookings-management.js') }}"></script>

@@ -52,7 +52,7 @@
 .mgmt-card {
     background: #fff;
     border-radius: 12px;
-    padding: 16px; /* Slightly tighter padding for status cards */
+    padding: 16px; 
     box-shadow: 0 10px 26px rgba(0,0,0,.05);
     border: 1px solid #eee;
     display: flex;
@@ -60,35 +60,33 @@
     justify-content: center;
 }
 
-/* Specifically targeting the larger Payment Card (the last one) */
 .mgmt-cards .mgmt-card:last-child {
-    background: #fcfcfc; /* Subtle hint that this is the primary card */
+    background: #fcfcfc;
     border-color: #e2e8f0;
-    padding: 20px; /* More breathing room for the big number */
+    padding: 20px;
 }
 
 .mgmt-card-title {
     color: #666;
-    font-size: 11px; /* Reduced from 13px to fit better in smaller status boxes */
+    font-size: 11px;
     margin-bottom: 8px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.02em;
 }
 
-/* Values for the smaller status cards */
 .mgmt-card-value {
-    font-size: 22px; /* Reduced from 26px for the status counts */
+    font-size: 22px;
     font-weight: 800;
     color: #111;
 }
 
-/* Value for the double-sized payment card */
 .mgmt-cards .mgmt-card:last-child .mgmt-card-value {
-    font-size: 32px; /* Making the payment amount significantly larger */
+    font-size: 32px;
     color: #000;
     letter-spacing: -0.03em;
 }
+
 /* --- SECTION --- */
 .mgmt-section {
     background: #fff;
@@ -188,9 +186,9 @@
 .mgmt-badge.approved { background: #d4edda; color: #155724; }
 .mgmt-badge.denied { background: #f8d7da; color: #721c24; }
 .mgmt-badge.cancelled { 
-    background: #f1f5f9; /* slate-100 */
-    color: #475569;      /* slate-600 */
-    border: 1px solid #cbd5e1; /* slate-300 */
+    background: #f1f5f9; 
+    color: #475569;      
+    border: 1px solid #cbd5e1; 
 }
 
 /* --- PROOF OF PAYMENT / MODAL RECEIPT --- */
@@ -219,7 +217,7 @@
     flex-direction: column;
     align-items: center;
     color: #adb5bd;
-    padding: 0; /* Override global empty state padding */
+    padding: 0; 
 }
 
 .receipt-box i {
@@ -227,12 +225,12 @@
     margin-bottom: 10px;
 }
 
-/* --- FLASH MESSAGES (ALERTS) - UPDATED TO MIDDLE --- */
+/* --- FLASH MESSAGES (ALERTS) --- */
 .mgmt-alert {
     position: fixed;
     top: 25px;
-    left: 50%; /* Position at horizontal center */
-    transform: translateX(-50%); /* Offset by half its width to perfectly center */
+    left: 50%; 
+    transform: translateX(-50%); 
     z-index: 9999;
     padding: 16px 24px;
     border-radius: 12px;
@@ -243,8 +241,6 @@
     font-size: 14px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     min-width: 320px;
-    
-    /* Changed animation to slide down from top instead of right */
     animation: slideInDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
@@ -260,25 +256,15 @@
     border: 1px solid #e74c3c;
 }
 
-/* Updated Fade-out for the middle position */
 .mgmt-alert.fade-out {
     opacity: 0;
-    top: 10px; /* Moves slightly up as it fades */
+    top: 10px; 
     transition: all 0.5s ease;
 }
 
-/* New Animation: Slide down from the top edge */
 @keyframes slideInDown {
-    from { 
-        top: -100px; 
-        opacity: 0; 
-        transform: translateX(-50%); 
-    }
-    to { 
-        top: 25px; 
-        opacity: 1; 
-        transform: translateX(-50%); 
-    }
+    from { top: -100px; opacity: 0; transform: translateX(-50%); }
+    to { top: 25px; opacity: 1; transform: translateX(-50%); }
 }
 
 /* --- PAGINATION --- */
@@ -287,7 +273,14 @@
     padding-top: 20px;
     border-top: 1px solid #f1f1f1;
     display: flex;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
+}
+
+/* Hides the redundant upper part (Previous/Next text and extra 'Showing' text) */
+#paginationWrapper nav div:first-child {
+    display: none !important;
 }
 
 #paginationWrapper .pagination {
@@ -295,7 +288,7 @@
     display: flex;
     gap: 8px;
     padding: 0;
-    margin: 0;
+    margin: 12px 0 0 0;
 }
 
 #paginationWrapper .page-link {
@@ -320,8 +313,23 @@
     border-color: #111;
 }
 
+/* Ensure arrows are styled consistently with numbers */
+#paginationWrapper .page-item.disabled .page-link {
+    background: #f8f9fa;
+    color: #ccc;
+    border-color: #eee;
+    pointer-events: none;
+}
+
 /* --- UTILS --- */
 .empty-state { text-align: center; padding: 60px 0; color: #ccc; }
 .text-left { text-align: left; }
 .text-center { text-align: center; }
 .text-right { text-align: right; }
+
+.mgmt-card-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
