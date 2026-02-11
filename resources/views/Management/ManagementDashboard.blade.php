@@ -45,7 +45,7 @@
                 <thead>
                     <tr>
                         <th class="text-left" style="width: 20%;">CLIENT</th>
-                        <th class="text-left" style="width: 20%;">DATE SUBMITTED (PHT)</th>
+                        <th class="text-left" style="width: 20%;">DATE SUBMITTED</th>
                         <th class="text-center" style="width: 20%;">REVIEWED BY</th>
                         <th class="text-center" style="width: 20%;">STATUS</th>
                         <th class="text-right" style="width: 20%;">ACTION</th>

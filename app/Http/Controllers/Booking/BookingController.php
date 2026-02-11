@@ -14,7 +14,7 @@ class BookingController extends Controller
     /**
      * Show the form for editing a draft booking.
      */
-    public function edit($id)
+public function edit($id)
 {
     $user = Auth::user();
 
@@ -22,7 +22,7 @@ class BookingController extends Controller
         ->join('clients', 'bookings.client_id', '=', 'clients.client_id')
         ->join('venues', 'bookings.venue_id', '=', 'venues.venue_id')
         ->where('bookings.booking_id', $id)
-        ->whereIn('bookings.status', ['draft', 'denied']) // ✅ draft + denied editable
+        ->whereIn('bookings.status', ['draft', 'denied']) 
         ->where('clients.user_id', $user->user_id)
         ->select('bookings.*', 'venues.venue_name', 'venues.venue_address')
         ->first();
@@ -40,12 +40,36 @@ class BookingController extends Controller
         ->pluck('service_id')
         ->toArray();
 
+    // --- CALENDAR LOGIC START ---
+    
+    // 🔴 Approved bookings (ALL users)
+    $approvedDates = DB::table('bookings')
+        ->where('status', 'approved')
+        ->where('booking_id', '!=', $id) // Don't block itself
+        ->pluck('booking_date')
+        ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
+        ->toArray();
+
+    // 🟡 Pending bookings (ONLY this user)
+    $pendingDates = DB::table('bookings')
+        ->join('clients', 'bookings.client_id', '=', 'clients.client_id')
+        ->where('clients.user_id', $user->user_id)
+        ->where('bookings.status', 'pending')
+        ->where('bookings.booking_id', '!=', $id) // Don't block itself
+        ->pluck('booking_date')
+        ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
+        ->toArray();
+
+    // --- CALENDAR LOGIC END ---
+
     return view('Client.EditBooking', compact(
         'booking',
         'eventTypes',
         'services',
         'paxOptions',
-        'selectedServices'
+        'selectedServices',
+        'approvedDates', // Pass to view
+        'pendingDates'   // Pass to view
     ));
 }
 

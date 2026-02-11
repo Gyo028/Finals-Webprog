@@ -139,10 +139,10 @@
                                 <td class="event-type-cell">
                                     <strong>{{ $booking->event_name }}</strong>
                                 </td>
-                                <td class="date-submitted">
-                                    {{ \Carbon\Carbon::parse($booking->date_submitted)->setTimezone('Asia/Manila')->format('M d, Y') }}<br>
-                                    <small>{{ \Carbon\Carbon::parse($booking->date_submitted)->setTimezone('Asia/Manila')->format('h:i A') }}</small>
-                                </td>
+                                    <td class="date-submitted">
+                                        {{ \Carbon\Carbon::parse($booking->date_submitted, 'UTC')->setTimezone('Asia/Manila')->format('M d, Y') }}<br>
+                                        <small>{{ \Carbon\Carbon::parse($booking->date_submitted, 'UTC')->setTimezone('Asia/Manila')->format('h:i A') }}</small>
+                                    </td>
                                 <td>
                                     <span class="status-pill {{ strtolower($booking->status) }}">
                                         {{ strtoupper($booking->status) }}
