@@ -289,11 +289,13 @@ class BookingController extends Controller
     /**
      * Update a draft booking and submit it.
      */
+    /**
+     * Update a draft booking and submit it.
+     */
     public function update(Request $request, $id)
     {
         $user = Auth::user();
 
-        // Fetch the draft booking for this user
         $booking = DB::table('bookings')
             ->join('clients', 'bookings.client_id', '=', 'clients.client_id')
             ->where('booking_id', $id)
@@ -305,10 +307,8 @@ class BookingController extends Controller
             abort(403, 'Cannot update this booking.');
         }
 
-        // Determine if this is a draft submission
         $isDraft = $request->input('status') === 'draft';
 
-        // Validation rules
         $rules = [
             'event_id'      => 'required|integer',
             'pax_id'        => 'required|integer',
@@ -318,52 +318,32 @@ class BookingController extends Controller
             'receipt'       => $isDraft ? 'nullable|image|max:2048' : 'required|image|max:2048',
         ];
 
-        // Only validate date/time if it's a full submission
         if (!$isDraft) {
             $rules['event_date'] = [
-                'required',
-                'date',
+                'required', 'date',
                 function ($attribute, $value, $fail) use ($id) {
                     $selectedDate = Carbon::parse($value);
                     if ($selectedDate->lt(now()->addMonth())) {
                         $fail('Bookings must be made at least 1 month in advance.');
                     }
-
                     $existing = DB::table('bookings')
                         ->where('booking_date', $selectedDate->format('Y-m-d'))
                         ->where('status', 'approved')
                         ->where('booking_id', '<>', $id)
                         ->first();
-
                     if ($existing) {
-                        $fail('The selected date is already booked. Please choose another date.');
+                        $fail('The selected date is already booked.');
                     }
                 },
             ];
-
-            $rules['event_time']       = 'required';
+            $rules['event_time'] = 'required';
             $rules['booking_end_time'] = 'required';
         }
 
-        $validatedData = $request->validate($rules, [
-            'event_id.required'         => 'Please choose an event.',
-            'event_id.integer'          => 'Selected event is invalid.',
-            'pax_id.required'           => 'Please select number of guests.',
-            'pax_id.integer'            => 'Selected guest count is invalid.',
-            'venue_name.required'       => 'Please enter the venue name.',
-            'venue_address.required'    => 'Please select an address from the suggestions.',
-            'event_date.required'       => 'Please select the event date.',
-            'event_date.date'           => 'The event date must be valid.',
-            'event_time.required'       => 'Please select the start time.',
-            'booking_end_time.required' => 'Please select the end time.',
-            'total_amount.required'     => 'Total amount could not be calculated.',
-            'receipt.required'          => 'Please upload your proof of payment.',
-            'receipt.mimes'             => 'The receipt must be jpg, jpeg, png, or pdf.',
-            'receipt.max'               => 'The receipt file must be smaller than 2MB.',
-        ]);
+        $request->validate($rules);
 
         DB::transaction(function () use ($request, $booking, $id, $isDraft) {
-            // Update venue
+            // 1. Update Venue
             DB::table('venues')
                 ->where('venue_id', $booking->venue_id)
                 ->update([
@@ -373,7 +353,7 @@ class BookingController extends Controller
                     'updated_at'    => now(),
                 ]);
 
-            // Prepare booking update data
+            // 2. Prepare Booking Data
             $updateData = [
                 'event_id'    => $request->event_id,
                 'pax_id'      => $request->pax_id,
@@ -388,31 +368,32 @@ class BookingController extends Controller
                 $updateData['booking_end_time']   = $request->booking_end_time;
             }
 
-            // Handle optional receipt upload
+            // 3. Handle Receipt & Payment
             if ($request->hasFile('receipt')) {
                 $fileName = 'receipt_' . time() . '.' . $request->file('receipt')->getClientOriginalExtension();
+                $path = 'uploads/receipts/' . $fileName;
                 $request->file('receipt')->move(public_path('uploads/receipts'), $fileName);
 
-                $updateData['receipt'] = 'uploads/receipts/' . $fileName;
+                // REMOVE THIS LINE if you choose Option 2 (not adding the column)
+                // $updateData['receipt'] = $path; 
 
-                if (!$isDraft) {
-                    DB::table('payments')->insert([
-                        'booking_id'     => $id,
+                // Update or Insert Payment Record
+                DB::table('payments')->updateOrInsert(
+                    ['booking_id' => $id],
+                    [
                         'amount'         => $request->total_amount,
                         'payment_status' => 'Under Review',
-                        'receipt_path'   => 'uploads/receipts/' . $fileName,
+                        'receipt_path'   => $path,
                         'payment_date'   => now(),
-                        'created_at'     => now(),
-                    ]);
-                }
+                        'updated_at'     => now(),
+                    ]
+                );
             }
 
-            // Update booking
-            DB::table('bookings')
-                ->where('booking_id', $id)
-                ->update($updateData);
+            // 4. Update Booking
+            DB::table('bookings')->where('booking_id', $id)->update($updateData);
 
-            // Update services
+            // 5. Sync Services
             DB::table('booking_services')->where('booking_id', $id)->delete();
             if ($request->has('service_id')) {
                 foreach ($request->service_id as $serviceId) {
@@ -425,8 +406,7 @@ class BookingController extends Controller
             }
         });
 
-        $message = $isDraft ? 'Draft updated successfully!' : 'Booking updated and submitted!';
-        return redirect()->route('client.dashboard')->with('success', $message);
+        return redirect()->route('dashboard')->with('success', 'Booking processed successfully!');
     }
 
     public function validateStep(Request $request)
